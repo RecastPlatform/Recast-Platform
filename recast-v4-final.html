@@ -1,0 +1,2612 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Recast — Circular Economy for Construction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+
+/* ─────────────────────────────────────────────────────────
+   DESIGN TOKENS
+───────────────────────────────────────────────────────── */
+:root {
+  /* Palette — light */
+  --bg:       #F2F0EA;
+  --bg2:      #E8E6DE;
+  --ink:      #111110;
+  --ink2:     #55554E;
+  --ink3:     #AAAA9F;
+  --rule:     #D8D6CE;
+
+  /* Status colours */
+  --ongoing:     #2B6E45;
+  --ongoing-bg:  #D4EAD8;
+  --planned:     #1A4F8A;
+  --planned-bg:  #D4E4F5;
+
+  /* Typography */
+  --fd: 'Barlow Condensed', sans-serif;   /* display */
+  --fm: 'Courier Prime', 'Courier New', monospace;  /* body / UI */
+
+  /* Chrome */
+  --nav-h:  3rem;
+  --nav-bg: rgba(242, 240, 234, 0.97);
+  --ease:   0.22s cubic-bezier(.4,0,.2,1);
+}
+
+[data-theme="dark"] {
+  --bg:       #111110;
+  --bg2:      #1A1A18;
+  --ink:      #F2F0EA;
+  --ink2:     #9A9A92;
+  --ink3:     #555550;
+  --rule:     #2A2A28;
+  --nav-bg:   rgba(17, 17, 16, 0.97);
+  --ongoing:     #4BA870;
+  --ongoing-bg:  #0C2018;
+  --planned:     #5898D8;
+  --planned-bg:  #081828;
+}
+
+/* ─────────────────────────────────────────────────────────
+   RESET
+───────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--fm);
+  font-size: .9rem;
+  font-weight: 400;
+  line-height: 1.75;
+  overflow-x: hidden;
+  transition: background var(--ease), color var(--ease);
+}
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: var(--fm); }
+
+/* ─────────────────────────────────────────────────────────
+   NAV
+───────────────────────────────────────────────────────── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 600;
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  background: var(--nav-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: background var(--ease);
+}
+
+/* Logo */
+.nav-logo {
+  font-family: var(--fm);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+/* Centre tabs */
+.nav-tabs {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  list-style: none;
+  gap: 0;
+}
+.nav-tabs a {
+  font-family: var(--fm);
+  font-size: .62rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  padding: .3rem 1rem;
+  display: block;
+  transition: color var(--ease);
+  white-space: nowrap;
+}
+.nav-tabs a:hover { color: var(--ink); }
+.nav-tabs a.active { color: var(--ink); }
+
+/* Right controls */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-shrink: 0;
+}
+
+/* Theme toggle */
+.theme-btn {
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 1px solid var(--rule);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .65rem;
+  color: var(--ink3);
+  transition: background var(--ease), color var(--ease), border-color var(--ease);
+}
+.theme-btn:hover { background: var(--rule); color: var(--ink); }
+[data-theme="light"] .icon-moon { display: none; }
+[data-theme="dark"]  .icon-sun  { display: none; }
+
+/* CTA button */
+.nav-cta {
+  font-family: var(--fm);
+  font-size: .6rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: .3rem .85rem;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  background: transparent;
+  display: inline-block;
+  transition: background var(--ease), color var(--ease), border-color var(--ease);
+  white-space: nowrap;
+}
+.nav-cta:hover { background: var(--ink); color: var(--bg); }
+
+/* ─────────────────────────────────────────────────────────
+   PAGE SYSTEM
+───────────────────────────────────────────────────────── */
+.page {
+  display: none;
+  min-height: 100vh;
+  padding-top: var(--nav-h);
+}
+.page.active { display: block; }
+
+/* ─────────────────────────────────────────────────────────
+   PLACEHOLDER CONTENT
+   Temporary — will be replaced section by section
+───────────────────────────────────────────────────────── */
+.ph-page {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  min-height: calc(100vh - var(--nav-h));
+  padding: 4rem 2rem;
+  border-bottom: 1px solid var(--ink);
+}
+.ph-label {
+  font-family: var(--fm);
+  font-size: .58rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 1rem;
+}
+.ph-title {
+  font-family: var(--fd);
+  font-size: clamp(3rem, 8vw, 7rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -.02em;
+  line-height: .9;
+  color: var(--ink);
+}
+.ph-sub {
+  font-family: var(--fm);
+  font-size: .8rem;
+  color: var(--ink3);
+  margin-top: 1.5rem;
+  max-width: 44ch;
+  line-height: 1.7;
+}
+.ph-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--ink);
+  margin: 2.5rem 0 0;
+}
+
+/* ─────────────────────────────────────────────────────────
+   HOME — WORDMARK
+───────────────────────────────────────────────────────── */
+#page-home { padding-top: var(--nav-h); }
+
+#home-wordmark-row {
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  overflow: hidden;
+  line-height: 1;
+}
+
+#home-wordmark {
+  font-family: var(--fd);
+  font-weight: 900;
+  font-size: clamp(5.5rem, 16.5vw, 18rem);
+  text-transform: uppercase;
+  letter-spacing: -.025em;
+  line-height: .88;
+  color: var(--ink);
+  white-space: nowrap;
+  padding: 0 .35rem;
+  transition: color var(--ease);
+}
+
+/* ─────────────────────────────────────────────────────────
+   HOME — SHARED SECTION SYSTEM
+   Every section: two equal columns, black rule above,
+   image cell has uniform padding so image floats in space.
+───────────────────────────────────────────────────────── */
+.home-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--ink);
+  min-height: 80vh;
+}
+
+/* The cell that holds the image — padding creates the margin */
+.home-section .img-cell {
+  padding: 3.5rem 2.5rem;
+  min-height: 70vh;
+}
+
+/* The img-slot fills the padded cell completely */
+.home-section .img-cell .img-slot {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+}
+
+/* The cell that holds text */
+.home-section .text-cell {
+  padding: 5rem 3rem 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Section label (small caps above heading) */
+.sec-label {
+  font-size: .6rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 2rem;
+}
+
+/* Section heading — unified across all sections */
+.sec-heading {
+  font-family: var(--fd);
+  font-weight: 700;
+  font-size: clamp(1.4rem, 2.4vw, 2.4rem);
+  text-transform: uppercase;
+  letter-spacing: -.01em;
+  line-height: 1.05;
+  color: var(--ink);
+  transition: color var(--ease);
+}
+
+/* Section body text */
+.sec-body {
+  font-size: .82rem;
+  line-height: 1.85;
+  color: var(--ink2);
+  max-width: 44ch;
+  margin-top: auto;
+  padding-top: 3rem;
+}
+.sec-body p + p { margin-top: 1.1rem; }
+
+/* Section nav button — sits at the very bottom of text cell */
+.sec-nav-btn {
+  display: inline-block;
+  margin-top: 3.5rem;
+  font-family: var(--fm);
+  font-size: .62rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  padding: .6rem 1.4rem;
+  background: transparent;
+  text-decoration: none;
+  transition: background var(--ease), color var(--ease);
+  align-self: flex-start;
+}
+.sec-nav-btn:hover { background: var(--ink); color: var(--bg); }
+
+/* ─────────────────────────────────────────────────────────
+   HOME — HERO INTRO  (image LEFT · tagline right)
+   Inherits .home-section — just a couple of tweaks
+───────────────────────────────────────────────────────── */
+#home-intro {
+  border-top: none;   /* wordmark already has border-bottom above it */
+  min-height: 72vh;
+}
+
+#home-intro .text-cell {
+  justify-content: flex-start;
+  padding-top: 5rem;
+}
+
+/* ─────────────────────────────────────────────────────────
+   HOME — STATS SECTION  (text LEFT · image RIGHT)
+───────────────────────────────────────────────────────── */
+.stat-row {
+  padding: 1.8rem 0;
+  border-top: 1px solid var(--rule);
+}
+.stat-row:last-child { border-bottom: 1px solid var(--rule); }
+
+.stat-number {
+  font-family: var(--fm);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 3.8vw, 4.2rem);
+  letter-spacing: -.03em;
+  line-height: 1;
+  color: var(--ink);
+}
+.stat-number em {
+  font-style: normal;
+  font-size: .52em;
+  letter-spacing: 0;
+}
+.stat-desc {
+  font-size: .74rem;
+  line-height: 1.55;
+  color: var(--ink2);
+  margin-top: .3rem;
+  max-width: 32ch;
+}
+
+/* ─────────────────────────────────────────────────────────
+   IMAGE SLOT  (shared, used in all sections)
+───────────────────────────────────────────────────────── */
+.img-slot {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 40vh;
+  overflow: hidden;
+  background: var(--bg2);
+}
+.img-slot input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+.slot-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+  z-index: 1;
+}
+.slot-preview.visible { display: block; }
+.slot-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
+  pointer-events: none;
+  z-index: 0;
+  transition: background var(--ease);
+}
+.slot-placeholder.hidden { display: none; }
+.img-slot:hover .slot-placeholder { background: var(--rule); }
+.slot-icon {
+  font-size: 1.4rem;
+  color: var(--ink3);
+  line-height: 1;
+}
+.slot-label {
+  font-family: var(--fm);
+  font-size: .56rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+.slot-remove {
+  position: absolute;
+  top: .7rem;
+  right: .7rem;
+  z-index: 3;
+  background: var(--ink);
+  color: var(--bg);
+  border: none;
+  font-family: var(--fm);
+  font-size: .52rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: .25rem .55rem;
+  display: none;
+  transition: opacity .18s;
+}
+.slot-remove:hover { opacity: .7; }
+.slot-remove.visible { display: block; }
+
+/* ─────────────────────────────────────────────────────────
+   MAP PAGE
+───────────────────────────────────────────────────────── */
+#page-map {
+  flex-direction: column;
+  height: 100vh;
+  padding-top: var(--nav-h);
+  background: var(--bg);
+}
+#page-map.active { display: flex !important; }
+
+#map-toolbar {
+  height: 2.8rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  flex-shrink: 0;
+  z-index: 500;
+}
+#map-toolbar-left { display: flex; align-items: center; gap: 1.5rem; }
+#map-count-badge { display: flex; align-items: baseline; gap: .4rem; }
+#map-count-num {
+  font-family: var(--fd); font-weight: 700; font-size: 1.15rem;
+  color: var(--ink); letter-spacing: -.02em; line-height: 1;
+}
+#map-count-label {
+  font-family: var(--fm); font-size: .56rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink3);
+}
+#map-filter-group { display: flex; gap: .25rem; }
+.map-filter-btn {
+  font-family: var(--fm); font-size: .56rem; letter-spacing: .1em;
+  text-transform: uppercase; background: transparent;
+  border: 1px solid var(--rule); color: var(--ink3);
+  padding: .22rem .7rem;
+  transition: background .18s, color .18s, border-color .18s;
+}
+.map-filter-btn:hover { border-color: var(--ink3); color: var(--ink2); }
+.map-filter-btn.active { border-color: var(--ink); color: var(--ink); }
+
+#map-outer {
+  flex: 1; min-height: 0;
+  padding: 2rem;
+  position: relative;
+  background: var(--bg);
+}
+#map-wrap {
+  position: relative; width: 100%; height: 100%;
+  overflow: hidden;
+}
+#map { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+#map-float-submit {
+  position: absolute; bottom: 3rem; right: 3rem; z-index: 700;
+  font-family: var(--fm); font-size: .6rem; letter-spacing: .1em;
+  text-transform: uppercase; background: var(--bg); color: #111110;
+  border: 1px solid #111110; padding: .75rem 1.4rem; cursor: pointer;
+  transition: transform .15s, box-shadow .15s, background .15s;
+}
+#map-float-submit:hover { background: #111110; color: var(--bg); transform: translateY(-1px); }
+
+#map-loading {
+  position: absolute; inset: 0; background: rgba(242,240,234,.85);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 800; transition: opacity .4s;
+}
+#map-loading.hidden { opacity: 0; pointer-events: none; }
+#map-loading-inner { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+#map-spinner {
+  width: 2rem; height: 2rem; border: 2px solid var(--rule);
+  border-top-color: var(--ink); border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#map-loading-text {
+  font-family: var(--fm); font-size: .62rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink3);
+}
+
+#map-pin-banner {
+  position: absolute; top: 1rem; left: 50%; transform: translateX(-50%);
+  z-index: 750; background: var(--ink); color: var(--bg);
+  font-family: var(--fm); font-size: .64rem; letter-spacing: .1em;
+  text-transform: uppercase; padding: .65rem 1.4rem;
+  display: none; align-items: center; gap: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,.2); white-space: nowrap;
+}
+#map-pin-banner.visible { display: flex; }
+#map-pin-cancel {
+  background: transparent; border: 1px solid rgba(242,240,234,.3);
+  color: var(--bg); font-family: var(--fm); font-size: .56rem;
+  letter-spacing: .08em; text-transform: uppercase;
+  padding: .2rem .6rem; cursor: pointer; transition: background .15s;
+}
+#map-pin-cancel:hover { background: rgba(242,240,234,.15); }
+
+#map-legend {
+  position: absolute; bottom: 1.5rem; left: 1.2rem; z-index: 700;
+  background: rgba(242,240,234,.92); border: 1px solid var(--rule);
+  padding: .7rem 1rem; display: flex; flex-direction: column; gap: .4rem;
+}
+.legend-row {
+  display: flex; align-items: center; gap: .5rem;
+  font-family: var(--fm); font-size: .58rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink2);
+}
+.legend-dot { width: .55rem; height: .55rem; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.legend-dot.ongoing  { background: #4BA870; }
+.legend-dot.planned  { background: #5898D8; }
+.legend-dot.submitted{ background: #D4A843; }
+
+#map-source {
+  position: absolute; bottom: .6rem; right: 1rem; z-index: 700;
+  font-family: var(--fm); font-size: .5rem; letter-spacing: .06em; color: var(--ink3);
+}
+#map-source a { color: var(--ink3); text-decoration: underline; }
+#map-source a:hover { color: var(--ink2); }
+
+.leaflet-satellite-pane img { filter: grayscale(1) brightness(1.05) contrast(1.1) !important; }
+.leaflet-labels-pane img { opacity: 0.9; }
+.leaflet-control-zoom { display: none !important; }
+.leaflet-control-attribution {
+  background: rgba(242,240,234,.8) !important; color: var(--ink3) !important; font-size: .48rem !important;
+}
+.leaflet-control-attribution a { color: var(--ink3) !important; }
+
+#map.pin-mode { cursor: crosshair !important; }
+
+.recast-cluster {
+  background: var(--ink); border: 2px solid rgba(255,255,255,.8); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fd); font-weight: 700; color: var(--bg);
+  cursor: pointer; transition: transform .15s;
+}
+.recast-cluster:hover { transform: scale(1.1); }
+.recast-cluster.sm { width: 2rem; height: 2rem; font-size: .8rem; }
+.recast-cluster.md { width: 2.8rem; height: 2.8rem; font-size: 1rem; }
+.recast-cluster.lg { width: 3.6rem; height: 3.6rem; font-size: 1.2rem; }
+
+.recast-dot {
+  border-radius: 50%; border: 2px solid rgba(255,255,255,.7);
+  cursor: pointer; transition: transform .15s;
+}
+.recast-dot:hover { transform: scale(1.4); }
+.recast-dot.ongoing   { background: #4BA870; width: 12px; height: 12px; }
+.recast-dot.planned   { background: #5898D8; width: 12px; height: 12px; }
+.recast-dot.submitted { background: #D4A843; width: 12px; height: 12px; }
+
+/* Project sidebar */
+#project-sidebar {
+  position: absolute; top: 0; left: 0; bottom: 0; z-index: 710;
+  width: 25%; min-width: 22rem; max-width: 30rem;
+  background: #141412; border-right: 1px solid #2A2A28;
+  display: flex; flex-direction: column;
+  transition: transform .3s cubic-bezier(.4,0,.2,1); overflow: hidden;
+}
+#project-sidebar.sidebar-closed { transform: translateX(-100%); }
+#sidebar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .85rem 1.2rem; border-bottom: 1px solid #2A2A28; flex-shrink: 0;
+}
+#sidebar-status-badge { font-family: var(--fm); font-size: .54rem; letter-spacing: .14em; text-transform: uppercase; padding: .2rem .6rem; }
+#sidebar-status-badge.ongoing   { background: #0C2018; color: #4BA870; border: 1px solid #4BA870; }
+#sidebar-status-badge.planned   { background: #081828; color: #5898D8; border: 1px solid #5898D8; }
+#sidebar-status-badge.submitted { background: #1A1200; color: #D4A843; border: 1px solid #D4A843; }
+#sidebar-close { background: transparent; border: none; color: #555550; font-size: .9rem; padding: .2rem .5rem; line-height: 1; cursor: pointer; transition: color .15s; }
+#sidebar-close:hover { color: #F2F0EA; }
+#sidebar-thumbnail { position: relative; width: 100%; height: 13rem; background: #0E0E0C; flex-shrink: 0; overflow: hidden; }
+#sidebar-thumb-img { width: 100%; height: 100%; object-fit: cover; display: none; }
+#sidebar-thumb-img.visible { display: block; }
+#sidebar-thumb-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+#sidebar-thumb-placeholder span { font-family: var(--fm); font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; color: #2A2A28; }
+#sidebar-body { flex: 1; overflow-y: auto; padding: 1.4rem 1.2rem 2rem; scrollbar-width: thin; scrollbar-color: #2A2A28 transparent; }
+#sidebar-body::-webkit-scrollbar { width: 4px; }
+#sidebar-body::-webkit-scrollbar-thumb { background: #2A2A28; }
+#sidebar-title { font-family: var(--fd); font-weight: 700; font-size: clamp(1.1rem,2vw,1.5rem); text-transform: uppercase; letter-spacing: -.01em; line-height: 1.05; color: #F2F0EA; margin-bottom: .5rem; }
+#sidebar-address { font-size: .68rem; color: #555550; letter-spacing: .04em; }
+.sidebar-divider { height: 1px; background: #2A2A28; margin: 1.2rem 0; }
+.sidebar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem 1rem; }
+.sidebar-field-label { font-family: var(--fm); font-size: .52rem; letter-spacing: .12em; text-transform: uppercase; color: #444440; margin-bottom: .2rem; }
+.sidebar-field-value { font-size: .74rem; color: #9A9A92; line-height: 1.4; }
+.sidebar-section { margin-bottom: 1.1rem; }
+.sidebar-section-label { font-family: var(--fm); font-size: .52rem; letter-spacing: .12em; text-transform: uppercase; color: #444440; margin-bottom: .4rem; }
+.sidebar-section-value { font-size: .74rem; line-height: 1.7; color: #9A9A92; }
+.sidebar-contact-item { display: flex; flex-direction: column; gap: .1rem; margin-bottom: .7rem; padding-bottom: .7rem; border-bottom: 1px solid #1E1E1C; }
+.sidebar-contact-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.sidebar-contact-role { font-size: .54rem; letter-spacing: .1em; text-transform: uppercase; color: #444440; }
+.sidebar-contact-name { font-size: .78rem; color: #C8C6BE; }
+.sidebar-contact-detail { font-size: .68rem; color: #666660; }
+.sidebar-link { display: inline-block; font-family: var(--fm); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; color: #F2F0EA; border: 1px solid #3A3A38; padding: .55rem 1rem; transition: background .18s, border-color .18s; text-decoration: none; }
+.sidebar-link:hover { background: #2A2A28; border-color: #555550; }
+#sf-link-wrap { margin-bottom: .8rem; }
+#sf-data-source-section { padding-top: .2rem; }
+.sidebar-source-link { display: inline-block; font-family: var(--fm); font-size: .64rem; color: #9A9A92; text-decoration: underline; text-underline-offset: 3px; margin-top: .25rem; transition: color .15s; word-break: break-all; }
+.sidebar-source-link:hover { color: #F2F0EA; }
+.sidebar-source-meta { font-size: .58rem; color: #333330; letter-spacing: .04em; margin-top: .3rem; line-height: 1.5; }
+
+/* Submit modal */
+#submit-modal {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center; padding: 2rem;
+  background: rgba(17,17,16,.5); backdrop-filter: blur(6px);
+  opacity: 0; pointer-events: none; transition: opacity .25s;
+}
+#submit-modal.modal-open { opacity: 1; pointer-events: all; }
+#submit-modal-inner {
+  background: var(--bg); border: 1px solid var(--ink);
+  width: 100%; max-width: 58rem; max-height: calc(100vh - 4rem);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+#submit-modal-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 1.4rem 1.8rem; border-bottom: 1px solid var(--ink); flex-shrink: 0; }
+#submit-modal-title { font-family: var(--fd); font-weight: 700; font-size: 1.3rem; text-transform: uppercase; letter-spacing: -.01em; color: var(--ink); }
+#submit-modal-subtitle { font-family: var(--fm); font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink3); margin-top: .2rem; }
+#submit-modal-close { background: transparent; border: none; color: var(--ink3); font-size: 1rem; padding: .3rem .5rem; cursor: pointer; transition: color .15s; line-height: 1; flex-shrink: 0; }
+#submit-modal-close:hover { color: var(--ink); }
+
+#submit-tabs { display: flex; border-bottom: 1px solid var(--rule); flex-shrink: 0; overflow-x: auto; }
+.submit-tab { font-family: var(--fm); font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; padding: .8rem 1.6rem; background: transparent; border: none; color: var(--ink3); border-bottom: 2px solid transparent; cursor: pointer; transition: color .15s, border-color .15s; white-space: nowrap; }
+.submit-tab:hover { color: var(--ink2); }
+.submit-tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+
+#submit-modal-body { flex: 1; overflow-y: auto; padding: 2rem 1.8rem; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+#submit-modal-body::-webkit-scrollbar { width: 4px; }
+#submit-modal-body::-webkit-scrollbar-thumb { background: var(--rule); }
+
+.submit-tab-panel { display: none; }
+.submit-tab-panel.active { display: block; }
+
+.submit-section-heading { font-family: var(--fm); font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink3); padding-bottom: .6rem; border-bottom: 1px solid var(--rule); margin-bottom: 1.2rem; margin-top: 2rem; }
+.submit-section-heading:first-child { margin-top: 0; }
+
+.sfield { margin-bottom: 1rem; }
+.sfield label { display: flex; align-items: center; gap: .4rem; font-family: var(--fm); font-size: .54rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink3); margin-bottom: .35rem; }
+.sfield label .req { color: #D4A843; }
+.sfield label .hint { font-size: .5rem; letter-spacing: .06em; color: var(--ink3); text-transform: none; margin-left: auto; }
+.sfield input, .sfield select, .sfield textarea { width: 100%; font-family: var(--fm); font-size: .76rem; background: var(--bg2); border: 1px solid var(--rule); color: var(--ink); padding: .6rem .85rem; outline: none; resize: vertical; transition: border-color .18s; line-height: 1.5; }
+.sfield input::placeholder, .sfield textarea::placeholder { color: var(--ink3); }
+.sfield input:focus, .sfield select:focus, .sfield textarea:focus { border-color: var(--ink2); }
+.sfield select option { background: var(--bg); }
+.sgrid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.sgrid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+#submit-pin-indicator { display: flex; align-items: center; gap: .8rem; padding: .7rem 1rem; border: 1px solid var(--rule); background: var(--bg2); margin-bottom: 1rem; }
+.pin-dot { width: .6rem; height: .6rem; border-radius: 50%; background: #D4A843; flex-shrink: 0; }
+#submit-pin-coords { font-family: var(--fm); font-size: .68rem; color: var(--ink2); flex: 1; }
+#submit-pin-reselect { font-family: var(--fm); font-size: .54rem; letter-spacing: .08em; text-transform: uppercase; background: transparent; border: 1px solid var(--rule); color: var(--ink3); padding: .2rem .6rem; cursor: pointer; transition: color .15s, border-color .15s; }
+#submit-pin-reselect:hover { color: var(--ink); border-color: var(--ink); }
+
+#submit-thumb-wrap { border: 1px dashed var(--rule); background: var(--bg2); height: 10rem; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden; transition: border-color .18s; margin-bottom: 1rem; }
+#submit-thumb-wrap:hover { border-color: var(--ink3); }
+#submit-thumb-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 2; }
+#submit-thumb-preview { position: absolute; inset: 0; object-fit: cover; display: none; z-index: 1; }
+#submit-thumb-preview.visible { display: block; }
+#submit-thumb-label { display: flex; flex-direction: column; align-items: center; gap: .5rem; pointer-events: none; }
+#submit-thumb-label .tl-icon { font-size: 1.4rem; color: var(--ink3); line-height: 1; }
+#submit-thumb-label .tl-text { font-family: var(--fm); font-size: .56rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink3); }
+
+.material-headers { display: grid; grid-template-columns: 2fr 1fr 1fr 1.4fr 1fr auto; gap: .5rem; margin-bottom: .3rem; }
+.mat-hdr { font-family: var(--fm); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink3); }
+#materials-list { margin-bottom: .5rem; }
+.material-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1.4fr 1fr auto; gap: .5rem; align-items: center; margin-bottom: .4rem; }
+.material-row input, .material-row select { font-family: var(--fm); font-size: .7rem; background: var(--bg2); border: 1px solid var(--rule); color: var(--ink); padding: .45rem .6rem; outline: none; transition: border-color .18s; width: 100%; }
+.material-row input:focus, .material-row select:focus { border-color: var(--ink2); }
+.material-row select option { background: var(--bg); }
+.mat-remove { background: transparent; border: 1px solid var(--rule); color: var(--ink3); font-size: .7rem; padding: .4rem .55rem; cursor: pointer; transition: color .15s, border-color .15s; line-height: 1; }
+.mat-remove:hover { color: var(--ink); border-color: var(--ink); }
+#add-material-btn { font-family: var(--fm); font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; background: transparent; border: 1px dashed var(--rule); color: var(--ink3); padding: .5rem 1rem; width: 100%; cursor: pointer; transition: border-color .18s, color .18s; margin-top: .3rem; }
+#add-material-btn:hover { border-color: var(--ink3); color: var(--ink2); }
+
+.submit-privacy-note { display: flex; gap: .7rem; padding: .8rem 1rem; background: var(--bg2); border: 1px solid var(--rule); margin-bottom: 1.2rem; }
+.submit-privacy-icon { color: var(--ink3); flex-shrink: 0; margin-top: .1rem; }
+.submit-privacy-text { font-size: .66rem; line-height: 1.65; color: var(--ink3); }
+.submit-privacy-text strong { color: var(--ink2); font-weight: 400; }
+
+#submit-modal-footer { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.8rem; border-top: 1px solid var(--rule); flex-shrink: 0; gap: 1rem; }
+.submit-footer-note { font-size: .6rem; color: var(--ink3); letter-spacing: .04em; line-height: 1.5; }
+.submit-tab-nav { display: flex; gap: .5rem; align-items: center; }
+.submit-tab-prev, .submit-tab-next { font-family: var(--fm); font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; background: transparent; border: 1px solid var(--rule); color: var(--ink2); padding: .5rem 1.1rem; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+.submit-tab-prev:hover, .submit-tab-next:hover { border-color: var(--ink); color: var(--ink); }
+.submit-tab-prev:disabled, .submit-tab-next:disabled { opacity: .3; cursor: not-allowed; }
+.submit-modal-cta { font-family: var(--fm); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; background: var(--ink); color: var(--bg); border: none; padding: .75rem 2rem; cursor: pointer; transition: background .18s; }
+.submit-modal-cta:hover { background: var(--ink2); }
+
+/* ─────────────────────────────────────────────────────────
+   FOOTER
+───────────────────────────────────────────────────────── */
+#site-footer {
+  background: #2A2A28;
+  color: #C8C6BE;
+  font-family: var(--fm);
+}
+
+.footer-main {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  border-bottom: 1px solid #3A3A38;
+  padding: 4rem 2rem;
+}
+
+.footer-col {
+  padding-right: 3rem;
+}
+.footer-col + .footer-col {
+  padding-left: 2rem;
+  border-left: 1px solid #3A3A38;
+}
+
+.footer-col-label {
+  font-size: .56rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #666660;
+  margin-bottom: 1.6rem;
+}
+
+/* Subscribe column */
+.footer-subscribe-text {
+  font-size: .78rem;
+  line-height: 1.7;
+  color: #9A9A92;
+  margin-bottom: 1.8rem;
+  max-width: 36ch;
+}
+.footer-email-row {
+  display: flex;
+  gap: 0;
+}
+.footer-email-input {
+  flex: 1;
+  font-family: var(--fm);
+  font-size: .72rem;
+  background: #222220;
+  border: 1px solid #3A3A38;
+  border-right: none;
+  color: #C8C6BE;
+  padding: .65rem 1rem;
+  outline: none;
+  transition: border-color .2s;
+}
+.footer-email-input::placeholder { color: #555550; }
+.footer-email-input:focus { border-color: #666660; }
+.footer-email-btn {
+  font-family: var(--fm);
+  font-size: .62rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  background: #C8C6BE;
+  color: #1A1A18;
+  border: 1px solid #C8C6BE;
+  padding: .65rem 1.2rem;
+  transition: background .2s, color .2s;
+  white-space: nowrap;
+}
+.footer-email-btn:hover { background: #F2F0EA; }
+.footer-privacy {
+  font-size: .6rem;
+  color: #555550;
+  margin-top: .9rem;
+  letter-spacing: .04em;
+}
+
+/* Sitemap column */
+.footer-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+}
+.footer-links a {
+  font-size: .72rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #9A9A92;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color .2s;
+}
+.footer-links a:hover { color: #C8C6BE; }
+
+/* Follow column */
+.footer-follow-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+}
+.footer-follow-links a {
+  font-size: .72rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #9A9A92;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color .2s;
+}
+.footer-follow-links a:hover { color: #C8C6BE; }
+
+/* Wordmark row */
+.footer-wordmark-row {
+  overflow: hidden;
+  line-height: 1;
+  border-bottom: 1px solid #3A3A38;
+}
+.footer-wordmark {
+  font-family: var(--fd);
+  font-weight: 900;
+  font-size: clamp(4rem, 14vw, 15rem);
+  text-transform: uppercase;
+  letter-spacing: -.025em;
+  line-height: .88;
+  color: #F2F0EA;
+  white-space: nowrap;
+  padding: 0 .35rem;
+  display: block;
+}
+
+/* Contact bar */
+.footer-contact {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.2rem 2rem;
+  border-top: 1px solid #3A3A38;
+}
+.footer-contact-items {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+.footer-contact-enquiry {
+  font-size: .66rem;
+  letter-spacing: .04em;
+  color: #666660;
+  margin-bottom: .3rem;
+}
+.footer-contact-row {
+  display: flex;
+  gap: 2.5rem;
+  align-items: center;
+}
+.footer-contact-item {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  font-size: .66rem;
+  letter-spacing: .06em;
+  color: #666660;
+}
+.footer-contact-item span {
+  color: #9A9A92;
+}
+.footer-copyright {
+  font-size: .6rem;
+  letter-spacing: .06em;
+  color: #444440;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE — mobile & tablet
+   Breakpoints: 480px (phone), 700px (large phone / small tablet)
+═══════════════════════════════════════════════════════════ */
+
+/* ── Shared small-screen resets ─────────────────────────── */
+@media (max-width: 700px) {
+
+  /* Nav */
+  nav { padding: 0 1.2rem; }
+  .nav-tabs { display: none; }
+  .nav-logo { font-size: .65rem; }
+
+  /* Pages */
+  .ph-page { padding: 3rem 1.2rem; }
+  .ph-title { font-size: clamp(2.5rem, 12vw, 5rem); }
+
+  /* Wordmark */
+  #home-wordmark { font-size: clamp(3.2rem, 17vw, 7rem); }
+
+  /* Home sections — stack vertically */
+  .home-section {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  .home-section .img-cell { order: -1; min-height: 56vw; padding: 1.2rem; }
+  .home-section .text-cell { padding: 2rem 1.2rem 2.5rem; }
+  .sec-heading { font-size: clamp(1.2rem, 5vw, 2rem); }
+  .sec-body { padding-top: 1.5rem; max-width: none; }
+  .sec-nav-btn { margin-top: 2rem; }
+
+  /* Stats */
+  .stat-number { font-size: clamp(2rem, 9vw, 3.5rem); }
+
+  /* Map page */
+  #map-outer { padding: 0.8rem; }
+  #map-toolbar { padding: 0 1rem; gap: .5rem; flex-wrap: wrap; height: auto; min-height: 2.8rem; }
+  #map-toolbar-left { flex-wrap: wrap; gap: .5rem; }
+  #map-count-badge { display: none; } /* save space on mobile */
+  #map-filter-group { gap: .2rem; }
+  .map-filter-btn { font-size: .5rem; padding: .2rem .5rem; }
+
+  #map-float-submit {
+    bottom: 1.5rem;
+    right: 1rem;
+    font-size: .56rem;
+    padding: .6rem 1rem;
+  }
+
+  #map-legend { bottom: 1rem; left: .8rem; padding: .5rem .8rem; }
+  .legend-row { font-size: .52rem; }
+
+  /* Project sidebar — full width on mobile */
+  #project-sidebar {
+    width: 100%;
+    max-width: 100%;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70vh;
+    border-right: none;
+    border-top: 1px solid #2A2A28;
+    transform: none;
+  }
+  #project-sidebar.sidebar-closed { transform: translateY(100%); }
+  #sidebar-thumbnail { height: 9rem; }
+
+  /* Submit modal — full screen on mobile */
+  #submit-modal { padding: 0; align-items: flex-end; }
+  #submit-modal-inner {
+    max-width: 100%;
+    max-height: 92vh;
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+  }
+  #submit-modal-header { padding: 1rem 1.2rem; }
+  #submit-modal-title { font-size: 1rem; }
+  #submit-tabs { overflow-x: auto; }
+  .submit-tab { padding: .65rem 1rem; font-size: .52rem; }
+  #submit-modal-body { padding: 1.2rem; }
+  .sgrid-2, .sgrid-3 { grid-template-columns: 1fr; }
+  .material-headers { display: none; }
+  .material-row {
+    grid-template-columns: 1fr 1fr;
+    gap: .4rem;
+  }
+  .material-row input:first-child,
+  .material-row select:last-of-type { grid-column: 1 / -1; }
+  #submit-modal-footer { padding: .8rem 1.2rem; flex-wrap: wrap; gap: .6rem; }
+  .submit-footer-note { display: none; }
+  .submit-tab-nav { width: 100%; justify-content: space-between; }
+  .submit-modal-cta { flex: 1; }
+
+  /* Footer */
+  .footer-main {
+    grid-template-columns: 1fr;
+    padding: 2.5rem 1.2rem;
+    gap: 2rem;
+  }
+  .footer-col { padding-right: 0; }
+  .footer-col + .footer-col {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #3A3A38;
+    padding-top: 2rem;
+  }
+  .footer-wordmark { font-size: clamp(3rem, 18vw, 8rem); }
+  .footer-contact {
+    flex-direction: column;
+    gap: .8rem;
+    align-items: flex-start;
+    padding: 1rem 1.2rem;
+  }
+  .footer-contact-items { flex-direction: column; gap: .5rem; }
+  .footer-copyright { font-size: .54rem; }
+  .footer-email-row { flex-direction: column; }
+  .footer-email-input { border-right: 1px solid #3A3A38; border-bottom: none; }
+  .footer-email-btn { width: 100%; text-align: center; padding: .65rem; }
+}
+
+/* ── Very small phones (under 400px) ────────────────────── */
+@media (max-width: 400px) {
+  .nav-right { gap: .4rem; }
+  .nav-cta { font-size: .52rem; padding: .25rem .6rem; }
+  .theme-btn { width: 1.4rem; height: 1.4rem; }
+
+  #home-wordmark { font-size: clamp(2.8rem, 18vw, 4rem); }
+
+  .map-filter-btn { display: none; }
+  #map-filter-group::before {
+    content: 'Filter';
+    font-family: var(--fm);
+    font-size: .54rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    align-self: center;
+  }
+  #project-sidebar { height: 80vh; }
+  #sidebar-thumbnail { height: 7rem; }
+}
+
+/* ── Tablet (701px – 1024px) ───────────────────────────── */
+@media (min-width: 701px) and (max-width: 1024px) {
+
+  /* Nav — compress tabs */
+  .nav-tabs a { font-size: .55rem; padding: .3rem .65rem; }
+
+  /* Home sections — narrower columns */
+  .home-section { min-height: 60vh; }
+  .home-section .text-cell { padding: 3rem 2rem 2.5rem; }
+  .sec-heading { font-size: clamp(1.2rem, 2.8vw, 2rem); }
+
+  /* Map */
+  #map-outer { padding: 1.2rem; }
+
+  /* Project sidebar — 40% width on tablet */
+  #project-sidebar { width: 40%; min-width: 18rem; }
+
+  /* Submit modal */
+  #submit-modal-inner { max-width: 44rem; }
+  .sgrid-3 { grid-template-columns: 1fr 1fr; }
+
+  /* Footer */
+  .footer-main { padding: 3rem 1.5rem; }
+  .footer-wordmark { font-size: clamp(4rem, 11vw, 9rem); }
+}
+
+/* ── Mobile menu ─────────────────────────────── */
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink2);
+  font-size: .8rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--ease), color var(--ease);
+}
+.mobile-menu-btn:hover { background: var(--rule); color: var(--ink); }
+@media (max-width: 700px) {
+  .mobile-menu-btn { display: flex; }
+  .nav-cta { display: none; } /* replaced by menu */
+}
+
+#mobile-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(17,17,16,.6);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s;
+}
+#mobile-drawer.open { opacity: 1; pointer-events: all; }
+#mobile-drawer-inner {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 70vw;
+  max-width: 18rem;
+  background: var(--bg);
+  border-left: 1px solid var(--ink);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.4rem;
+  transform: translateX(100%);
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+}
+#mobile-drawer.open #mobile-drawer-inner { transform: translateX(0); }
+#mobile-drawer-close {
+  background: transparent; border: none;
+  font-size: .8rem; color: var(--ink3);
+  align-self: flex-end; margin-bottom: 1.5rem;
+  cursor: pointer; padding: .2rem .4rem;
+  transition: color .15s;
+}
+#mobile-drawer-close:hover { color: var(--ink); }
+#mobile-nav {
+  display: flex; flex-direction: column; gap: 0;
+}
+#mobile-nav a {
+  font-family: var(--fm);
+  font-size: .7rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  padding: .85rem 0;
+  border-bottom: 1px solid var(--rule);
+  transition: color .15s;
+  text-decoration: none;
+}
+#mobile-nav a:first-child { border-top: 1px solid var(--rule); }
+#mobile-nav a:hover, #mobile-nav a.active { color: var(--ink); }
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     NAV
+══════════════════════════════════════════════ -->
+<nav>
+  <span class="nav-logo">Recast</span>
+
+  <ul class="nav-tabs" id="navTabs">
+    <li><a href="#" data-page="home" class="active">Home</a></li>
+    <li><a href="#" data-page="map">Map</a></li>
+    <li><a href="#" data-page="pipeline">Pipeline</a></li>
+    <li><a href="#" data-page="inventory">Inventory</a></li>
+    <li><a href="#" data-page="about">About</a></li>
+  </ul>
+
+  <div class="nav-right">
+    <button class="theme-btn" id="themeBtn" aria-label="Toggle theme">
+      <span class="icon-sun">☀</span>
+      <span class="icon-moon">☽</span>
+    </button>
+    <a class="nav-cta" href="#" id="nav-submit-cta">+ Submit project</a>
+    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">☰</button>
+  </div>
+</nav>
+
+<!-- Mobile nav drawer -->
+<div id="mobile-drawer">
+  <div id="mobile-drawer-inner">
+    <button id="mobile-drawer-close">✕</button>
+    <nav id="mobile-nav">
+      <a href="#" data-page="home">Home</a>
+      <a href="#" data-page="map">Map</a>
+      <a href="#" data-page="pipeline">Pipeline</a>
+      <a href="#" data-page="inventory">Inventory</a>
+      <a href="#" data-page="about">About</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: HOME
+══════════════════════════════════════════════ -->
+<div class="page active" id="page-home">
+
+  <!-- § WORDMARK -->
+  <div id="home-wordmark-row">
+    <h1 id="home-wordmark">RECAST.</h1>
+  </div>
+
+  <!-- § 1 — HERO  (image LEFT · tagline RIGHT) -->
+  <div class="home-section" id="home-intro">
+
+    <div class="img-cell">
+      <div class="img-slot" id="slot-hero">
+        <input type="file" accept="image/*" onchange="slotLoad(this,'slot-hero')"/>
+        <img class="slot-preview" id="slot-hero-img" alt=""/>
+        <div class="slot-placeholder" id="slot-hero-ph">
+          <div class="slot-icon">+</div>
+          <div class="slot-label">Upload image</div>
+        </div>
+        <button class="slot-remove" id="slot-hero-rm" onclick="slotRemove('slot-hero')">✕ Remove</button>
+      </div>
+    </div>
+
+    <div class="text-cell">
+      <h2 class="sec-heading">UK-based circular economy platform for construction.</h2>
+    </div>
+
+  </div>
+
+  <!-- § 2 — IMPACT  (text LEFT · image RIGHT) -->
+  <div class="home-section" id="home-stats">
+
+    <div class="text-cell">
+      <div>
+        <div class="sec-label">The scale of the problem</div>
+        <h2 class="sec-heading">Construction waste, by the numbers.</h2>
+      </div>
+      <div class="sec-body">
+        <div class="stat-row">
+          <div class="stat-number">62<em>%</em></div>
+          <div class="stat-desc">of all UK waste by weight comes from construction & demolition</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-number">100<em>M+</em></div>
+          <div class="stat-desc">tonnes of demolition waste generated in the UK annually</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-number">1.5<em>×</em></div>
+          <div class="stat-desc">CO₂ saved per tonne of reclaimed steel vs. virgin production</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-number">35<em>%</em></div>
+          <div class="stat-desc">embodied carbon reduction achievable through reclaimed materials</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="img-cell">
+      <div class="img-slot" id="slot-stats">
+        <input type="file" accept="image/*" onchange="slotLoad(this,'slot-stats')"/>
+        <img class="slot-preview" id="slot-stats-img" alt=""/>
+        <div class="slot-placeholder" id="slot-stats-ph">
+          <div class="slot-icon">+</div>
+          <div class="slot-label">Upload image</div>
+        </div>
+        <button class="slot-remove" id="slot-stats-rm" onclick="slotRemove('slot-stats')">✕ Remove</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- § 3 — ABOUT  (image LEFT · text RIGHT) -->
+  <div class="home-section" id="home-about">
+
+    <div class="img-cell">
+      <div class="img-slot" id="slot-about">
+        <input type="file" accept="image/*" onchange="slotLoad(this,'slot-about')"/>
+        <img class="slot-preview" id="slot-about-img" alt=""/>
+        <div class="slot-placeholder" id="slot-about-ph">
+          <div class="slot-icon">+</div>
+          <div class="slot-label">Upload image</div>
+        </div>
+        <button class="slot-remove" id="slot-about-rm" onclick="slotRemove('slot-about')">✕ Remove</button>
+      </div>
+    </div>
+
+    <div class="text-cell">
+      <div>
+        <div class="sec-label">About Recast</div>
+        <h2 class="sec-heading">A live atlas of demolition. A marketplace for what remains.</h2>
+      </div>
+      <div class="sec-body">
+        <p>Recast is a comprehensive index and interactive atlas of live and planned demolition projects across the UK. We map what is coming down — so that what is worth saving can be found, listed, and sourced before it is lost.</p>
+        <p>The platform connects architects, contractors, developers, and specialists with verified reclaimed materials directly from active sites. Every listing is tied to a real project, a real timeline, and a real point of contact.</p>
+        <p>Our ambition is to make the circular use of construction materials the default — not the exception.</p>
+        <a class="sec-nav-btn" href="#" data-page="about">About Recast →</a>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: MAP
+══════════════════════════════════════════════ -->
+<div class="page" id="page-map">
+
+  <!-- MAP TOOLBAR -->
+  <div id="map-toolbar">
+    <div id="map-toolbar-left">
+      <div id="map-count-badge">
+        <span id="map-count-num">—</span>
+        <span id="map-count-label">demolition projects</span>
+      </div>
+      <div id="map-filter-group">
+        <button class="map-filter-btn active" data-filter="all">All</button>
+        <button class="map-filter-btn" data-filter="ongoing">Ongoing</button>
+        <button class="map-filter-btn" data-filter="planned">Planned</button>
+        <button class="map-filter-btn" data-filter="submitted">Submitted</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP OUTER (provides page margins) -->
+  <div id="map-outer">
+
+    <!-- MAP CONTAINER -->
+    <div id="map-wrap">
+      <div id="map"></div>
+
+      <!-- Loading overlay -->
+      <div id="map-loading">
+        <div id="map-loading-inner">
+          <div id="map-spinner"></div>
+          <div id="map-loading-text">Fetching demolition data…</div>
+        </div>
+      </div>
+
+      <!-- Pin-drop instruction banner -->
+      <div id="map-pin-banner">
+        ↖ Click the project location on the map
+        <button id="map-pin-cancel">Cancel</button>
+      </div>
+
+      <!-- Legend -->
+      <div id="map-legend">
+        <div class="legend-row"><span class="legend-dot ongoing"></span> Ongoing</div>
+        <div class="legend-row"><span class="legend-dot planned"></span> Planned</div>
+        <div class="legend-row"><span class="legend-dot submitted"></span> Submitted</div>
+      </div>
+
+      <!-- Data source note -->
+      <div id="map-source">
+        Data: <a href="https://www.planit.org.uk" target="_blank">PlanIt UK</a> · <a href="https://www.planning.data.gov.uk" target="_blank">planning.data.gov.uk</a> · Recast submissions
+      </div>
+
+      <!-- Floating submit button -->
+      <button id="map-float-submit">+ Submit project</button>
+
+      <!-- PROJECT SIDEBAR -->
+      <div id="project-sidebar" class="sidebar-closed">
+    <div id="sidebar-header">
+      <div id="sidebar-status-badge"></div>
+      <button id="sidebar-close">✕</button>
+    </div>
+
+    <div id="sidebar-thumbnail">
+      <img id="sidebar-thumb-img" src="" alt=""/>
+      <div id="sidebar-thumb-placeholder">
+        <span>No image available</span>
+      </div>
+    </div>
+
+    <div id="sidebar-body">
+
+      <h2 id="sidebar-title"></h2>
+      <div id="sidebar-address"></div>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-grid">
+        <div class="sidebar-field">
+          <div class="sidebar-field-label">Status</div>
+          <div class="sidebar-field-value" id="sf-status"></div>
+        </div>
+        <div class="sidebar-field">
+          <div class="sidebar-field-label">Use / Type</div>
+          <div class="sidebar-field-value" id="sf-use"></div>
+        </div>
+        <div class="sidebar-field">
+          <div class="sidebar-field-label">Year Built</div>
+          <div class="sidebar-field-value" id="sf-year"></div>
+        </div>
+        <div class="sidebar-field">
+          <div class="sidebar-field-label">LPA</div>
+          <div class="sidebar-field-value" id="sf-lpa"></div>
+        </div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Reason for Demolition</div>
+        <div class="sidebar-section-value" id="sf-reason"></div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Background & History</div>
+        <div class="sidebar-section-value" id="sf-history"></div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Contacts</div>
+        <div id="sf-contacts"></div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div id="sf-link-wrap">
+        <a id="sf-link" href="#" target="_blank" class="sidebar-link">View planning application →</a>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div id="sf-data-source-section">
+        <div class="sidebar-section-label">Data Source</div>
+        <div id="sf-source-name" class="sidebar-field-value"></div>
+        <a id="sf-source-url" href="#" target="_blank" class="sidebar-source-link"></a>
+        <div id="sf-source-note" class="sidebar-source-meta"></div>
+      </div>
+
+    </div>
+  </div>
+
+      </div><!-- /project-sidebar -->
+
+    </div><!-- /map-wrap -->
+
+  </div><!-- /map-outer -->
+
+</div><!-- /page-map -->
+
+<!-- ══════════════════════════════════════════════
+     SUBMIT MODAL (global — triggered from nav CTA or map float btn)
+══════════════════════════════════════════════ -->
+<div id="submit-modal">
+  <div id="submit-modal-inner">
+
+    <div id="submit-modal-header">
+      <div>
+        <div id="submit-modal-title">Submit a Demolition Project</div>
+        <div id="submit-modal-subtitle">Add your project to the Recast atlas</div>
+      </div>
+      <button id="submit-modal-close">✕</button>
+    </div>
+
+    <div id="submit-tabs">
+      <button class="submit-tab active" data-tab="0">1 — Location</button>
+      <button class="submit-tab" data-tab="1">2 — Building</button>
+      <button class="submit-tab" data-tab="2">3 — Materials</button>
+      <button class="submit-tab" data-tab="3">4 — Contacts</button>
+      <button class="submit-tab" data-tab="4">5 — Review</button>
+    </div>
+
+    <div id="submit-modal-body">
+
+      <!-- ── TAB 0: LOCATION ── -->
+      <div class="submit-tab-panel active" data-panel="0">
+        <div class="submit-section-heading">Project Location</div>
+
+        <div id="submit-pin-indicator">
+          <div class="pin-dot"></div>
+          <div id="submit-pin-coords">No location selected yet</div>
+          <button id="submit-pin-reselect" style="display:none">Re-select on map</button>
+        </div>
+        <p style="font-size:.68rem;color:#555550;line-height:1.7;margin-bottom:1.2rem;">
+          If you arrived here from the map, your clicked location has been pre-filled above. You can also enter the address manually below.
+        </p>
+
+        <div class="sgrid-2">
+          <div class="sfield" style="grid-column:1/-1">
+            <label>Building name or project title <span class="req">*</span></label>
+            <input type="text" id="sf-project-name" placeholder="e.g. Former Haydock Warehouse, Unit 7"/>
+          </div>
+          <div class="sfield" style="grid-column:1/-1">
+            <label>Full address <span class="req">*</span></label>
+            <input type="text" id="sf-address" placeholder="Street address, town, county"/>
+          </div>
+          <div class="sfield">
+            <label>Postcode <span class="req">*</span></label>
+            <input type="text" id="sf-postcode" placeholder="e.g. WA11 9TH"/>
+          </div>
+          <div class="sfield">
+            <label>Local Planning Authority</label>
+            <input type="text" id="sf-lpa-input" placeholder="e.g. St Helens Borough Council"/>
+          </div>
+          <div class="sfield">
+            <label>Latitude <span class="hint">Auto-filled from map pin</span></label>
+            <input type="text" id="sf-lat" placeholder="e.g. 53.4714" readonly/>
+          </div>
+          <div class="sfield">
+            <label>Longitude <span class="hint">Auto-filled from map pin</span></label>
+            <input type="text" id="sf-lng" placeholder="e.g. -2.6681" readonly/>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB 1: BUILDING ── -->
+      <div class="submit-tab-panel" data-panel="1">
+        <div class="submit-section-heading">Building Information</div>
+
+        <!-- Thumbnail -->
+        <div class="sfield">
+          <label>Building photograph <span class="hint">JPG or PNG, max 10MB</span></label>
+          <div id="submit-thumb-wrap">
+            <input type="file" id="submit-thumb-input" accept="image/*"/>
+            <img id="submit-thumb-preview" alt=""/>
+            <div id="submit-thumb-label">
+              <span class="tl-icon">+</span>
+              <span class="tl-text">Upload thumbnail image</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sgrid-2">
+          <div class="sfield">
+            <label>Year of construction</label>
+            <input type="text" id="sf-year-built" placeholder="e.g. 1962"/>
+          </div>
+          <div class="sfield">
+            <label>Building use / type <span class="req">*</span></label>
+            <select id="sf-use-type">
+              <option value="">— Select —</option>
+              <option>Industrial / Manufacturing</option>
+              <option>Industrial / Warehouse</option>
+              <option>Commercial / Office</option>
+              <option>Retail</option>
+              <option>Healthcare</option>
+              <option>Education</option>
+              <option>Residential</option>
+              <option>Hospitality / Hotel</option>
+              <option>Leisure / Entertainment</option>
+              <option>Transport / Infrastructure</option>
+              <option>Telecommunications</option>
+              <option>Military / Government</option>
+              <option>Religious</option>
+              <option>Mixed Use</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="sfield">
+            <label>Demolition status <span class="req">*</span></label>
+            <select id="sf-status">
+              <option value="">— Select —</option>
+              <option>Planned</option>
+              <option>Ongoing</option>
+              <option>Completed</option>
+            </select>
+          </div>
+          <div class="sfield">
+            <label>Estimated start date</label>
+            <input type="month" id="sf-start-date"/>
+          </div>
+          <div class="sfield">
+            <label>Planning application reference</label>
+            <input type="text" id="sf-planning-ref" placeholder="e.g. 22/01234/FULL"/>
+          </div>
+          <div class="sfield">
+            <label>Link to planning application</label>
+            <input type="url" id="sf-planning-url" placeholder="https://"/>
+          </div>
+        </div>
+
+        <div class="submit-section-heading">Narrative</div>
+        <div class="sfield">
+          <label>Reason for demolition <span class="req">*</span></label>
+          <textarea id="sf-reason-text" rows="3" placeholder="Why is this building being demolished? e.g. structural condition, site redevelopment, decommissioning…"></textarea>
+        </div>
+        <div class="sfield">
+          <label>Background & history</label>
+          <textarea id="sf-history-text" rows="4" placeholder="Brief history of the building — original use, notable events, period of construction, architectural significance…"></textarea>
+        </div>
+      </div>
+
+      <!-- ── TAB 2: MATERIALS ── -->
+      <div class="submit-tab-panel" data-panel="2">
+        <div class="submit-section-heading">Available Materials</div>
+        <p style="font-size:.68rem;color:#555550;line-height:1.7;margin-bottom:1.2rem;">
+          List the materials from this project that may be available for reclamation, reuse, or sale. Be as specific as possible — buyers will use this information to assess suitability.
+        </p>
+
+        <div class="material-headers">
+          <div class="mat-hdr">Material</div>
+          <div class="mat-hdr">Quantity</div>
+          <div class="mat-hdr">Unit</div>
+          <div class="mat-hdr">Status</div>
+          <div class="mat-hdr">Certification</div>
+          <div></div>
+        </div>
+        <div id="materials-list"></div>
+        <button id="add-material-btn">+ Add material</button>
+
+        <div class="submit-section-heading">Condition & Access Notes</div>
+        <div class="sfield">
+          <label>General condition of materials</label>
+          <select id="sf-condition">
+            <option value="">— Select overall condition —</option>
+            <option>Excellent — as-new, minimal wear</option>
+            <option>Good — minor wear, fully functional</option>
+            <option>Fair — visible wear, structurally sound</option>
+            <option>Poor — significant wear, may require assessment</option>
+            <option>Unknown — not yet assessed</option>
+          </select>
+        </div>
+        <div class="sfield">
+          <label>Access & extraction notes</label>
+          <textarea id="sf-access-notes" rows="3" placeholder="Site access restrictions, extraction method, equipment requirements, health & safety considerations…"></textarea>
+        </div>
+      </div>
+
+      <!-- ── TAB 3: CONTACTS ── -->
+      <div class="submit-tab-panel" data-panel="3">
+
+        <div class="submit-section-heading">Public Contact — Visible to Platform Users</div>
+        <p style="font-size:.68rem;color:#555550;line-height:1.7;margin-bottom:1.2rem;">
+          This information will be visible to anyone viewing your project on the Recast platform. It allows architects, contractors, and buyers to contact you directly about the materials listed.
+        </p>
+        <div class="sgrid-2">
+          <div class="sfield">
+            <label>Organisation name <span class="req">*</span></label>
+            <input type="text" id="sf-org-name" placeholder="Company or individual name"/>
+          </div>
+          <div class="sfield">
+            <label>Your role</label>
+            <select id="sf-role">
+              <option value="">— Select —</option>
+              <option>Site Owner</option>
+              <option>Demolition Contractor</option>
+              <option>Developer</option>
+              <option>Estate Manager</option>
+              <option>Architect / Designer</option>
+              <option>Structural Engineer</option>
+              <option>Salvage Specialist</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="sfield">
+            <label>Public contact email <span class="req">*</span></label>
+            <input type="email" id="sf-public-email" placeholder="enquiries@yourcompany.co.uk"/>
+          </div>
+          <div class="sfield">
+            <label>Public contact phone</label>
+            <input type="tel" id="sf-public-phone" placeholder="+44 xxxx xxxxxx"/>
+          </div>
+          <div class="sfield" style="grid-column:1/-1">
+            <label>Website</label>
+            <input type="url" id="sf-website" placeholder="https://www.yourcompany.co.uk"/>
+          </div>
+        </div>
+
+        <div class="submit-section-heading">Private Contact — Visible to Recast Admin Only</div>
+        <div class="submit-privacy-note">
+          <div class="submit-privacy-icon">🔒</div>
+          <div class="submit-privacy-text">
+            <strong>This information is private.</strong> It will only be seen by the Recast team and will never be displayed publicly. We may use it to contact you if we have questions about your submission, to verify the project, or to discuss your listing.
+          </div>
+        </div>
+        <div class="sgrid-2">
+          <div class="sfield">
+            <label>Your full name <span class="req">*</span></label>
+            <input type="text" id="sf-private-name" placeholder="First and last name"/>
+          </div>
+          <div class="sfield">
+            <label>Your direct email <span class="req">*</span></label>
+            <input type="email" id="sf-private-email" placeholder="your.name@company.co.uk"/>
+          </div>
+          <div class="sfield">
+            <label>Your direct phone</label>
+            <input type="tel" id="sf-private-phone" placeholder="+44 xxxx xxxxxx"/>
+          </div>
+          <div class="sfield">
+            <label>Your job title</label>
+            <input type="text" id="sf-private-title" placeholder="e.g. Project Manager"/>
+          </div>
+        </div>
+        <div class="sfield">
+          <label>Any notes for the Recast team</label>
+          <textarea id="sf-admin-notes" rows="3" placeholder="Anything you'd like us to know before reviewing your submission…"></textarea>
+        </div>
+      </div>
+
+      <!-- ── TAB 4: REVIEW ── -->
+      <div class="submit-tab-panel" data-panel="4">
+        <div class="submit-section-heading">Review Your Submission</div>
+        <p style="font-size:.68rem;color:#555550;line-height:1.7;margin-bottom:1.5rem;">
+          Please review the information below before submitting. All submissions are reviewed by the Recast team before going live on the platform — this typically takes 2–3 working days.
+        </p>
+        <div id="submit-review-content" style="font-size:.74rem;color:#9A9A92;line-height:1.8;">
+          Complete all required fields in the previous steps to see your summary here.
+        </div>
+        <div class="submit-privacy-note" style="margin-top:1.5rem;">
+          <div class="submit-privacy-icon">ℹ</div>
+          <div class="submit-privacy-text">
+            By submitting, you confirm that the information provided is accurate to the best of your knowledge, and that you have the authority to list these materials. Your private contact details will be held securely by Recast and used only for submission-related communications.
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /submit-modal-body -->
+
+    <div id="submit-modal-footer">
+      <div class="submit-footer-note">All submissions reviewed by the Recast team before going live.</div>
+      <div class="submit-tab-nav">
+        <button class="submit-tab-prev" id="submit-prev" disabled>← Back</button>
+        <button class="submit-tab-next" id="submit-next">Next →</button>
+        <button class="submit-modal-cta" id="submit-final" style="display:none">Submit to Recast →</button>
+      </div>
+    </div>
+
+  </div><!-- /submit-modal-inner -->
+</div><!-- /submit-modal -->
+
+
+══════════════════════════════════════════════ -->
+<div class="page" id="page-pipeline">
+  <div class="ph-page">
+    <div class="ph-label">Phase 4</div>
+    <div class="ph-title">Pipeline</div>
+    <p class="ph-sub">Demolition project directory. Coming in Phase 4.</p>
+    <div class="ph-divider"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: INVENTORY
+══════════════════════════════════════════════ -->
+<div class="page" id="page-inventory">
+  <div class="ph-page">
+    <div class="ph-label">Phase 4</div>
+    <div class="ph-title">Inventory</div>
+    <p class="ph-sub">Materials marketplace. Coming in Phase 4.</p>
+    <div class="ph-divider"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: IMPACT
+══════════════════════════════════════════════ -->
+<div class="page" id="page-impact">
+  <div class="ph-page">
+    <div class="ph-label">Coming soon</div>
+    <div class="ph-title">Impact</div>
+    <p class="ph-sub">Data, research, and environmental impact of circular construction. Coming in a future phase.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: ABOUT
+══════════════════════════════════════════════ -->
+<div class="page" id="page-about">
+  <div class="ph-page">
+    <div class="ph-label">Coming soon</div>
+    <div class="ph-title">About</div>
+    <p class="ph-sub">The team, the mission, and the story behind Recast. Coming in a future phase.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SITE FOOTER (home page only)
+══════════════════════════════════════════════ -->
+<footer id="site-footer">
+
+  <!-- Main columns -->
+  <div class="footer-main">
+
+    <!-- Subscribe -->
+    <div class="footer-col">
+      <div class="footer-col-label">Subscribe</div>
+      <p class="footer-subscribe-text">Sign up with your email address to receive news and updates.</p>
+      <div class="footer-email-row">
+        <input class="footer-email-input" type="email" placeholder="Email Address"/>
+        <button class="footer-email-btn">Sign Up</button>
+      </div>
+      <p class="footer-privacy">We respect your privacy.</p>
+    </div>
+
+    <!-- Sitemap -->
+    <div class="footer-col">
+      <div class="footer-col-label">Site Map</div>
+      <ul class="footer-links">
+        <li><a href="#" data-page="map">Map</a></li>
+        <li><a href="#" data-page="pipeline">Pipeline</a></li>
+        <li><a href="#" data-page="inventory">Inventory</a></li>
+        <li><a href="#" data-page="about">About</a></li>
+      </ul>
+    </div>
+
+    <!-- Follow -->
+    <div class="footer-col">
+      <div class="footer-col-label">Follow</div>
+      <ul class="footer-follow-links">
+        <li><a href="#">Instagram</a></li>
+        <li><a href="#">LinkedIn</a></li>
+        <li><a href="#">Twitter</a></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- Giant wordmark -->
+  <div class="footer-wordmark-row">
+    <span class="footer-wordmark">RECAST.</span>
+  </div>
+
+  <!-- Contact bar -->
+  <div class="footer-contact">
+    <div class="footer-contact-items">
+      <div class="footer-contact-enquiry">For all enquiries, please contact the Recast team at the address below.</div>
+      <div class="footer-contact-row">
+      <div class="footer-contact-item">
+        <span>Email</span> info@recast.co.uk
+      </div>
+      <div class="footer-contact-item">
+        <span>Tel</span> +44 (0)20 7946 0312
+      </div>
+      </div>
+    </div>
+    <div class="footer-copyright">© 2026 Recast. All rights reserved.</div>
+  </div>
+
+</footer>
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════ -->
+<script>
+
+/* ── Theme ───────────────────────────────────── */
+const html = document.documentElement;
+const saved = localStorage.getItem('rc-theme');
+if (saved) html.setAttribute('data-theme', saved);
+
+document.getElementById('themeBtn').addEventListener('click', () => {
+  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('rc-theme', next);
+});
+
+/* ── Page routing ────────────────────────────── */
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + name);
+  if (target) target.classList.add('active');
+
+  document.querySelectorAll('.nav-tabs a').forEach(a => {
+    a.classList.toggle('active', a.dataset.page === name);
+  });
+
+  window.scrollTo(0, 0);
+
+  // Fire map init event
+  document.dispatchEvent(new CustomEvent('recast:showpage', { detail: name }));
+}
+
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-page]');
+  if (!a) return;
+  e.preventDefault();
+  showPage(a.dataset.page);
+});
+
+showPage('home');
+
+/* ── Image slots ─────────────────────────────── */
+function slotLoad(input, slotId) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = document.getElementById(slotId + '-img');
+    const ph  = document.getElementById(slotId + '-ph');
+    const rm  = document.getElementById(slotId + '-rm');
+    img.src = ev.target.result;
+    img.classList.add('visible');
+    ph.classList.add('hidden');
+    rm.classList.add('visible');
+  };
+  reader.readAsDataURL(file);
+}
+
+function slotRemove(slotId) {
+  const img = document.getElementById(slotId + '-img');
+  const ph  = document.getElementById(slotId + '-ph');
+  const rm  = document.getElementById(slotId + '-rm');
+  img.src = '';
+  img.classList.remove('visible');
+  ph.classList.remove('hidden');
+  rm.classList.remove('visible');
+}
+
+/* ── Mobile drawer ───────────────────────────── */
+const drawer = document.getElementById('mobile-drawer');
+document.getElementById('mobileMenuBtn').addEventListener('click', () => drawer.classList.add('open'));
+document.getElementById('mobile-drawer-close').addEventListener('click', () => drawer.classList.remove('open'));
+drawer.addEventListener('click', e => { if (e.target === drawer) drawer.classList.remove('open'); });
+document.querySelectorAll('#mobile-nav a').forEach(a => {
+  a.addEventListener('click', () => drawer.classList.remove('open'));
+});
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ══════════════════════════════════════════════
+   MAP MODULE
+══════════════════════════════════════════════ */
+
+let mapInstance = null;
+let allProjects = [];
+let activeFilter = 'all';
+let clusterGroups = {}; // zoom-level cluster data
+const CLUSTER_ZOOM_THRESHOLD = 10; // below this, cluster; above, individual dots
+
+// ── Colour helpers ────────────────────────────
+function statusColor(status) {
+  if (status === 'ongoing')   return '#4BA870';
+  if (status === 'planned')   return '#5898D8';
+  if (status === 'submitted') return '#D4A843';
+  return '#9A9A92';
+}
+
+// ── Determine status from planit data ─────────
+function inferStatus(app) {
+  const st = (app.app_state || '').toLowerCase();
+  const desc = (app.description || app.title || '').toLowerCase();
+  if (st.includes('decided') || st.includes('approved')) return 'planned';
+  if (st.includes('progress') || desc.includes('ongoing') || desc.includes('commenced')) return 'ongoing';
+  return 'planned';
+}
+
+// ── Build display title from planit record ────
+function buildTitle(app) {
+  if (app.address) return app.address;
+  if (app.name) return app.name;
+  return 'Demolition Project';
+}
+
+// ── Initialise map ────────────────────────────
+function initMap() {
+  if (mapInstance) return;
+
+  mapInstance = L.map('map', {
+    center: [54.5, -2.5],
+    zoom: 6,
+    zoomControl: false,
+    preferCanvas: true,
+    attributionControl: true,
+  });
+
+  // Create separate panes — satellite base + labels overlay filtered independently
+  mapInstance.createPane('satellitePane');
+  const satPane = mapInstance.getPane('satellitePane');
+  satPane.style.zIndex = 200;
+
+  mapInstance.createPane('labelsPane');
+  const lblPane = mapInstance.getPane('labelsPane');
+  lblPane.style.zIndex = 250;
+  lblPane.style.pointerEvents = 'none';
+
+  // ESRI World Imagery — greyscale aerial base
+  L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {
+      pane: 'satellitePane',
+      attribution: 'Tiles © Esri',
+      maxZoom: 19,
+      className: 'leaflet-satellite-pane',
+    }
+  ).addTo(mapInstance);
+
+  // CartoDB Dark Matter — only labels, transparent background
+  L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
+    {
+      pane: 'labelsPane',
+      attribution: '© <a href="https://carto.com/">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20,
+      className: 'leaflet-labels-pane',
+    }
+  ).addTo(mapInstance);
+
+  mapInstance.on('zoomend moveend', renderMarkers);
+
+  loadData();
+
+  // Filter buttons
+  document.querySelectorAll('.map-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.map-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = btn.dataset.filter;
+      renderMarkers();
+    });
+  });
+}
+
+// ── Fetch from planit.org.uk public API ───────
+async function fetchPlanitDemolitions() {
+  // Fetch demolition planning applications across UK using the planit.org.uk public API
+  // bbox covers Great Britain: W, S, E, N
+  const bbox = '-8.2,49.8,1.8,60.9';
+  const url = `https://www.planit.org.uk/api/applics/json?bbox=${bbox}&app_type=demolition&pg_sz=500&limit=500&start_date=2020-01-01`;
+
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error('planit fetch failed');
+  const data = await resp.json();
+  return (data.features || data.records || []).map(f => {
+    const props = f.properties || f;
+    return {
+      id: props.uid || props.id || Math.random().toString(36).slice(2),
+      title: buildTitle(props),
+      description: props.description || props.title || '',
+      address: props.address || '',
+      lpa: props.authority_name || props.lpa_name || '',
+      status: inferStatus(props),
+      validated: props.start_date || props.validated || '',
+      link: props.link || props.source_url || '',
+      source: 'planit',
+      lat: f.geometry ? f.geometry.coordinates[1] : parseFloat(props.lat),
+      lng: f.geometry ? f.geometry.coordinates[0] : parseFloat(props.lng),
+    };
+  }).filter(p => p.lat && p.lng && !isNaN(p.lat) && !isNaN(p.lng));
+}
+
+// ── Fetch from planning.data.gov.uk API ───────
+async function fetchPlanningGovDemolitions() {
+  // planning.data.gov.uk entity search — demolished-building dataset
+  const url = `https://www.planning.data.gov.uk/entity.json?dataset=demolished-building&limit=500&offset=0`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error('planning.data.gov fetch failed');
+  const data = await resp.json();
+  return (data.entities || []).map(e => {
+    const point = e.point || '';
+    const coords = point.replace('POINT(','').replace(')','').split(' ');
+    const lng = parseFloat(coords[0]);
+    const lat = parseFloat(coords[1]);
+    if (!lat || !lng || isNaN(lat) || isNaN(lng)) return null;
+    return {
+      id: String(e.entity),
+      title: e.name || e['organisation-entity'] || 'Demolished Building',
+      description: e.notes || '',
+      address: e['street-address'] || '',
+      lpa: e['organisation-entity'] || '',
+      status: 'ongoing',
+      validated: e['entry-date'] || '',
+      link: e.reference ? `https://www.planning.data.gov.uk/entity/${e.entity}` : '',
+      source: 'planning.data.gov',
+      lat, lng,
+    };
+  }).filter(Boolean);
+}
+
+// ── Load all data sources ──────────────────────
+async function loadData() {
+  showLoading(true);
+
+  const results = await Promise.allSettled([
+    fetchPlanitDemolitions(),
+    fetchPlanningGovDemolitions(),
+  ]);
+
+  const fetched = results
+    .filter(r => r.status === 'fulfilled')
+    .flatMap(r => r.value);
+
+  // Deduplicate by id
+  const seen = new Set();
+  allProjects = fetched.filter(p => {
+    if (seen.has(p.id)) return false;
+    seen.add(p.id);
+    return true;
+  });
+
+  // Add a handful of curated seed projects so the map is never empty
+  allProjects = [...allProjects, ...SEED_PROJECTS];
+
+  document.getElementById('map-count-num').textContent = allProjects.length.toLocaleString();
+  showLoading(false);
+  renderMarkers();
+}
+
+// ── Clustering logic ──────────────────────────
+function clusterProjects(projects, zoom) {
+  if (zoom >= CLUSTER_ZOOM_THRESHOLD) return null; // no clustering at high zoom
+  const gridSize = zoom < 7 ? 1.5 : zoom < 9 ? 0.5 : 0.15; // degrees
+  const cells = {};
+  projects.forEach(p => {
+    const cx = Math.floor(p.lng / gridSize);
+    const cy = Math.floor(p.lat / gridSize);
+    const key = `${cx},${cy}`;
+    if (!cells[key]) cells[key] = { items: [], lat: 0, lng: 0 };
+    cells[key].items.push(p);
+    cells[key].lat += p.lat;
+    cells[key].lng += p.lng;
+  });
+  return Object.values(cells).map(cell => ({
+    lat: cell.lat / cell.items.length,
+    lng: cell.lng / cell.items.length,
+    count: cell.items.length,
+    items: cell.items,
+    zoom: zoom,
+  }));
+}
+
+// ── Render markers ────────────────────────────
+let currentMarkers = [];
+
+function clearMarkers() {
+  currentMarkers.forEach(m => mapInstance.removeLayer(m));
+  currentMarkers = [];
+}
+
+function renderMarkers() {
+  if (!mapInstance) return;
+  clearMarkers();
+
+  const zoom = mapInstance.getZoom();
+  const bounds = mapInstance.getBounds().pad(0.1);
+
+  // Filter by status
+  let visible = allProjects.filter(p => {
+    if (activeFilter !== 'all' && p.status !== activeFilter) return false;
+    return bounds.contains([p.lat, p.lng]);
+  });
+
+  const clusters = clusterProjects(visible, zoom);
+
+  if (clusters) {
+    // Clustered view
+    clusters.forEach(cl => {
+      const size = cl.count > 50 ? 'lg' : cl.count > 10 ? 'md' : 'sm';
+      const el = document.createElement('div');
+      el.className = `recast-cluster ${size}`;
+      el.textContent = cl.count;
+
+      const icon = L.divIcon({ html: el, className: '', iconSize: null });
+      const marker = L.marker([cl.lat, cl.lng], { icon });
+      marker.on('click', () => {
+        // Always fit exactly to the bounds of this cluster's contents.
+        // Leaflet calculates the right zoom automatically — smooth, precise, no overshoot.
+        const lats = cl.items.map(p => p.lat);
+        const lngs = cl.items.map(p => p.lng);
+
+        // If all points are identical (same location), step in by 3 zoom levels
+        const spread = Math.max(...lats) - Math.min(...lats) + Math.max(...lngs) - Math.min(...lngs);
+        if (spread < 0.0001) {
+          mapInstance.flyTo([cl.lat, cl.lng], mapInstance.getZoom() + 3, { duration: 0.6 });
+        } else {
+          const clBounds = L.latLngBounds(
+            [Math.min(...lats), Math.min(...lngs)],
+            [Math.max(...lats), Math.max(...lngs)]
+          );
+          mapInstance.flyToBounds(clBounds, {
+            padding: [60, 60],
+            duration: 0.6,
+            maxZoom: 17,
+          });
+        }
+      });
+      marker.addTo(mapInstance);
+      currentMarkers.push(marker);
+    });
+  } else {
+    // Individual dots — no zoom, just open sidebar
+    visible.forEach(p => {
+      const el = document.createElement('div');
+      el.className = `recast-dot ${p.status}`;
+      const icon = L.divIcon({ html: el, className: '', iconSize: [12, 12] });
+      const marker = L.marker([p.lat, p.lng], { icon });
+      marker.on('click', () => showSidebar(p));
+      marker.addTo(mapInstance);
+      currentMarkers.push(marker);
+    });
+  }
+}
+
+// ── Sidebar ───────────────────────────────────
+function showSidebar(p) {
+  mapInstance.panTo([p.lat, p.lng], { animate: true, duration: 0.5 });
+  closeModal();
+
+  const img = document.getElementById('sidebar-thumb-img');
+  const ph  = document.getElementById('sidebar-thumb-placeholder');
+  if (p.thumbnail) {
+    img.src = p.thumbnail;
+    img.onload  = () => { img.classList.add('visible'); ph.style.display = 'none'; };
+    img.onerror = () => { img.classList.remove('visible'); ph.style.display = 'flex'; };
+  } else {
+    img.classList.remove('visible');
+    ph.style.display = 'flex';
+  }
+
+  const badge = document.getElementById('sidebar-status-badge');
+  const statusLabel = { ongoing: 'Ongoing', planned: 'Planned', submitted: 'Submitted' };
+  badge.textContent = statusLabel[p.status] || p.status;
+  badge.className = p.status;
+
+  document.getElementById('sidebar-title').textContent   = p.title || 'Untitled project';
+  document.getElementById('sidebar-address').textContent = p.address || '';
+
+  setValue('sf-status', statusLabel[p.status] || p.status);
+  setValue('sf-use',    p.use     || '—');
+  setValue('sf-year',   p.yearBuilt || '—');
+  setValue('sf-lpa',    p.lpa     || '—');
+  setValue('sf-reason', p.reason  || p.description || '—');
+  setValue('sf-history',p.history || '—');
+
+  const contactsEl = document.getElementById('sf-contacts');
+  contactsEl.innerHTML = '';
+  const contacts = p.contacts || [];
+  if (!contacts.length) {
+    contactsEl.innerHTML = '<div class="sidebar-section-value">No contact information available.</div>';
+  } else {
+    contacts.forEach(c => {
+      contactsEl.innerHTML += `<div class="sidebar-contact-item">
+        <div class="sidebar-contact-role">${c.role||'Contact'}</div>
+        <div class="sidebar-contact-name">${c.name||''}</div>
+        ${c.email   ? `<div class="sidebar-contact-detail">${c.email}</div>` : ''}
+        ${c.phone   ? `<div class="sidebar-contact-detail">${c.phone}</div>` : ''}
+        ${c.company ? `<div class="sidebar-contact-detail">${c.company}</div>` : ''}
+      </div>`;
+    });
+  }
+
+  const linkEl = document.getElementById('sf-link');
+  const linkWrap = document.getElementById('sf-link-wrap');
+  if (p.link) { linkEl.href = p.link; linkWrap.style.display = 'block'; }
+  else { linkWrap.style.display = 'none'; }
+
+  const srcMap = { planit: 'PlanIt UK', 'planning.data.gov': 'planning.data.gov.uk', Recast: 'Recast curated data' };
+  const sourceMap = {
+    planit:              { name:'PlanIt UK',             url:'https://www.planit.org.uk',          meta:'National aggregator of UK local authority planning applications.' },
+    'planning.data.gov': { name:'planning.data.gov.uk',  url:'https://www.planning.data.gov.uk',   meta:'DLUHC open planning data platform for England.' },
+    Recast:              { name:'Recast Curated Data',   url:'https://recast.co.uk',               meta:'Verified and manually curated by the Recast team.' },
+  };
+  const src = sourceMap[p.source] || { name: p.source||'Unknown', url:'', meta:'' };
+  document.getElementById('sf-source-name').textContent = src.name;
+  const srcUrlEl = document.getElementById('sf-source-url');
+  if (src.url) { srcUrlEl.href = src.url; srcUrlEl.textContent = src.url.replace('https://',''); srcUrlEl.style.display = 'inline-block'; }
+  else { srcUrlEl.style.display = 'none'; }
+  document.getElementById('sf-source-note').textContent = src.meta;
+
+  document.getElementById('project-sidebar').classList.remove('sidebar-closed');
+}
+
+function setValue(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+document.getElementById('sidebar-close').addEventListener('click', () => {
+  document.getElementById('project-sidebar').classList.add('sidebar-closed');
+  // ensure transition fires cleanly on both desktop and mobile
+  document.getElementById('project-sidebar').style.transform = '';
+});
+
+/* ══════════════════════════════════════════════
+   SUBMIT MODAL
+══════════════════════════════════════════════ */
+let pinDropMode = false;
+let pendingPin  = null; // { lat, lng } set when coming from map float btn
+
+// Open modal
+function openModal(fromMap) {
+  if (fromMap && mapInstance) {
+    // Enter pin-drop mode first
+    pinDropMode = true;
+    document.getElementById('map-pin-banner').classList.add('visible');
+    document.getElementById('map').classList.add('pin-mode');
+    return;
+  }
+  showModal();
+}
+
+function showModal() {
+  document.getElementById('submit-modal').classList.add('modal-open');
+  goToTab(0);
+  if (pendingPin) {
+    document.getElementById('sf-lat').value = pendingPin.lat.toFixed(6);
+    document.getElementById('sf-lng').value = pendingPin.lng.toFixed(6);
+    document.getElementById('submit-pin-coords').textContent =
+      `${pendingPin.lat.toFixed(5)}, ${pendingPin.lng.toFixed(5)}`;
+    document.getElementById('submit-pin-reselect').style.display = 'inline-block';
+  }
+}
+
+function closeModal() {
+  document.getElementById('submit-modal').classList.remove('modal-open');
+}
+
+// Nav CTA — open modal without pin drop
+document.getElementById('nav-submit-cta').addEventListener('click', e => {
+  e.preventDefault();
+  pendingPin = null;
+  openModal(false);
+});
+
+// Map float btn — enter pin-drop mode
+document.getElementById('map-float-submit').addEventListener('click', () => {
+  pendingPin = null;
+  openModal(true);
+});
+
+// Pin-drop cancel
+document.getElementById('map-pin-cancel').addEventListener('click', () => {
+  pinDropMode = false;
+  document.getElementById('map-pin-banner').classList.remove('visible');
+  document.getElementById('map').classList.remove('pin-mode');
+});
+
+// Listen for pin-drop click on map
+document.getElementById('map').addEventListener('click', e => {
+  if (!pinDropMode || !mapInstance) return;
+  const rect = document.getElementById('map').getBoundingClientRect();
+  const point = L.point(e.clientX - rect.left, e.clientY - rect.top);
+  const latlng = mapInstance.containerPointToLatLng(point);
+  pendingPin = { lat: latlng.lat, lng: latlng.lng };
+  pinDropMode = false;
+  document.getElementById('map-pin-banner').classList.remove('visible');
+  document.getElementById('map').classList.remove('pin-mode');
+  showModal();
+});
+
+// Re-select pin from within modal
+document.getElementById('submit-pin-reselect').addEventListener('click', () => {
+  closeModal();
+  pendingPin = null;
+  pinDropMode = true;
+  document.getElementById('map-pin-banner').classList.add('visible');
+  document.getElementById('map').classList.add('pin-mode');
+});
+
+// Close modal
+document.getElementById('submit-modal-close').addEventListener('click', closeModal);
+document.getElementById('submit-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('submit-modal')) closeModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* ── Tab navigation ── */
+let currentTab = 0;
+const TOTAL_TABS = 5;
+
+function goToTab(n) {
+  currentTab = Math.max(0, Math.min(TOTAL_TABS - 1, n));
+  document.querySelectorAll('.submit-tab').forEach((t, i) => t.classList.toggle('active', i === currentTab));
+  document.querySelectorAll('.submit-tab-panel').forEach((p, i) => p.classList.toggle('active', i === currentTab));
+  document.getElementById('submit-prev').disabled = currentTab === 0;
+  document.getElementById('submit-next').style.display = currentTab === TOTAL_TABS - 1 ? 'none' : 'inline-block';
+  document.getElementById('submit-final').style.display = currentTab === TOTAL_TABS - 1 ? 'inline-block' : 'none';
+  if (currentTab === TOTAL_TABS - 1) buildReview();
+}
+
+document.querySelectorAll('.submit-tab').forEach((t, i) => t.addEventListener('click', () => goToTab(i)));
+document.getElementById('submit-next').addEventListener('click', () => goToTab(currentTab + 1));
+document.getElementById('submit-prev').addEventListener('click', () => goToTab(currentTab - 1));
+
+/* ── Review summary ── */
+function buildReview() {
+  const name    = document.getElementById('sf-project-name').value || '—';
+  const addr    = document.getElementById('sf-address').value || '—';
+  const post    = document.getElementById('sf-postcode').value || '—';
+  const year    = document.getElementById('sf-year-built').value || '—';
+  const use     = document.getElementById('sf-use-type').value || '—';
+  const status  = document.getElementById('sf-status').value || '—';
+  const org     = document.getElementById('sf-org-name').value || '—';
+  const pub_email = document.getElementById('sf-public-email').value || '—';
+  const rows    = document.querySelectorAll('.material-row');
+  const matSummary = rows.length ? `${rows.length} material${rows.length>1?'s':''} listed` : 'None listed';
+
+  document.getElementById('submit-review-content').innerHTML = `
+    <table style="width:100%;border-collapse:collapse;">
+      ${row('Project name', name)}${row('Address', addr)}${row('Postcode', post)}
+      ${row('Year built', year)}${row('Use / type', use)}${row('Status', status)}
+      ${row('Materials', matSummary)}${row('Organisation', org)}${row('Public email', pub_email)}
+    </table>`;
+}
+function row(label, val) {
+  return `<tr><td style="padding:.35rem .5rem .35rem 0;color:#444440;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;vertical-align:top;">${label}</td><td style="padding:.35rem 0;color:#9A9A92;font-size:.74rem;">${val}</td></tr>`;
+}
+
+/* ── Materials list ── */
+function addMaterialRow(data={}) {
+  const row = document.createElement('div');
+  row.className = 'material-row';
+  row.innerHTML = `
+    <input type="text" placeholder="e.g. Structural steel" value="${data.name||''}"/>
+    <input type="text" placeholder="e.g. 12" value="${data.qty||''}"/>
+    <select>
+      <option ${data.unit==='tonnes'?'selected':''}>tonnes</option>
+      <option ${data.unit==='m²'?'selected':''}>m²</option>
+      <option ${data.unit==='m³'?'selected':''}>m³</option>
+      <option ${data.unit==='linear m'?'selected':''}>linear m</option>
+      <option ${data.unit==='units'?'selected':''}>units</option>
+      <option ${data.unit==='kg'?'selected':''}>kg</option>
+    </select>
+    <select>
+      <option>Not yet extracted</option>
+      <option>In situ — accessible</option>
+      <option>Extracted, loose</option>
+      <option>Packaged / palletised</option>
+      <option>Unknown</option>
+    </select>
+    <select>
+      <option value="">None</option>
+      <option>Third-party cert. available</option>
+      <option>Cert. pending</option>
+      <option>Self-certified</option>
+    </select>
+    <button class="mat-remove" onclick="this.closest('.material-row').remove()">✕</button>`;
+  document.getElementById('materials-list').appendChild(row);
+}
+document.getElementById('add-material-btn').addEventListener('click', () => addMaterialRow());
+addMaterialRow(); // start with one empty row
+
+/* ── Thumbnail upload ── */
+document.getElementById('submit-thumb-input').addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const prev = document.getElementById('submit-thumb-preview');
+    prev.src = ev.target.result;
+    prev.classList.add('visible');
+    document.getElementById('submit-thumb-label').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+});
+
+/* ── Final submit ── */
+document.getElementById('submit-final').addEventListener('click', () => {
+  alert('Thank you — your submission has been received.\n\nThe Recast team will review it within 2–3 working days and contact you if any further information is required.');
+  closeModal();
+});
+
+// ── Loading state ─────────────────────────────
+function showLoading(show) {
+  document.getElementById('map-loading').classList.toggle('hidden', !show);
+}
+
+// ── Seed data: verified UK demolition projects ─
+const SEED_PROJECTS = [
+  {
+    id:'s1', title:'Former Cummins Engine Factory', address:'St James Mill Rd, Northampton NN5 5JP',
+    lpa:'West Northamptonshire', status:'ongoing', lat:52.2421, lng:-0.9213,
+    use:'Industrial / Manufacturing', yearBuilt:'1965', reason:'Site remediation for mixed-use residential and commercial redevelopment.',
+    description:'Demolition of former industrial factory complex as part of wider regeneration scheme.',
+    history:'Operated as a diesel engine manufacturing plant from 1965 until closure in 2018. The site covers approximately 14 acres and includes several large steel-frame production sheds.',
+    thumbnail:'', validated:'2023-06', link:'',
+    contacts:[{ role:'Site Owner', name:'Northampton Regeneration Ltd', email:'info@northamptonregen.co.uk' },{ role:'Demolition Contractor', name:'Coleman & Sons Demolition', phone:'+44 1604 000 000' }],
+    source:'Recast'
+  },
+  {
+    id:'s2', title:'Centre Point Annex', address:'New Oxford Street, London WC1A 1DZ',
+    lpa:'Camden', status:'planned', lat:51.5163, lng:-0.1289,
+    use:'Commercial / Office', yearBuilt:'1971', reason:'Structural obsolescence and planned residential conversion of the wider Centre Point complex.',
+    description:'Partial demolition of annex building adjacent to the Grade II* listed tower.',
+    history:'The annex was built as a service and retail podium for the main Centre Point tower. It has been unoccupied since 2015 and is not listed in its own right.',
+    thumbnail:'', validated:'2023-11', link:'',
+    contacts:[{ role:'Developer', name:'Almacantar', email:'enquiries@almacantar.com' }],
+    source:'Recast'
+  },
+  {
+    id:'s3', title:'Former Woolwich Arsenal Building 19', address:'Plumstead Rd, London SE18 6ST',
+    lpa:'Royal Borough of Greenwich', status:'ongoing', lat:51.4892, lng:0.0735,
+    use:'Industrial / Military', yearBuilt:'1888', reason:'Unsafe structural condition. Not included in the listed building curtilage.',
+    description:'Demolition of Victorian-era industrial building within the Royal Arsenal regeneration zone.',
+    history:'Part of the Royal Arsenal complex, which was one of the largest munitions manufacturing sites in the world. Building 19 served as a proof and inspection shed until 1967.',
+    thumbnail:'', validated:'2024-02', link:'',
+    contacts:[{ role:'Site Owner', name:'Berkeley Homes (East Thames)', email:'info@berkeleygroup.co.uk' }],
+    source:'Recast'
+  },
+  {
+    id:'s4', title:'St James Hospital', address:'Locksway Rd, Portsmouth PO4 8LD',
+    lpa:'Portsmouth City Council', status:'planned', lat:50.7907, lng:-1.0563,
+    use:'Healthcare', yearBuilt:'1879', reason:'Decommissioned by NHS. Buildings declared surplus to requirements in 2021.',
+    description:'Demolition of decommissioned NHS hospital buildings. Multiple structures across a large Victorian campus.',
+    history:'Originally opened as the Borough Lunatic Asylum in 1879, later renamed Milton House and then St James Hospital. The campus contains several Victorian ward blocks and later 20th century additions.',
+    thumbnail:'', validated:'2023-09', link:'',
+    contacts:[{ role:'Client', name:'NHS Property Services', email:'nhs.propertyfeedback@nhs.net' }],
+    source:'Recast'
+  },
+  {
+    id:'s5', title:'Former Debenhams', address:'Market Street, Manchester M1 1WT',
+    lpa:'Manchester City Council', status:'planned', lat:53.4814, lng:-2.2374,
+    use:'Retail', yearBuilt:'1972', reason:'Chain closure. Building deemed unfit for alternative use without full redevelopment.',
+    description:'Full demolition of 1970s retail unit following nationwide closure of Debenhams.',
+    history:'The Market Street store was purpose-built for Debenhams in 1972, replacing an earlier department store on the same site. The building features a distinctive concrete and glass facade typical of its era.',
+    thumbnail:'', validated:'2024-01', link:'',
+    contacts:[{ role:'Site Owner', name:'Manchester City Council Estates', phone:'+44 161 234 5000' }],
+    source:'Recast'
+  },
+  {
+    id:'s6', title:'Speirs Wharf Warehouses', address:'Port Dundas, Glasgow G4 9TG',
+    lpa:'Glasgow City Council', status:'ongoing', lat:55.8654, lng:-4.2593,
+    use:'Industrial / Storage', yearBuilt:'1810', reason:'Part-demolition required to facilitate access and new residential blocks within the wider Speirs Wharf development.',
+    description:'Part-demolition of 19th century canal warehouse. Remaining structures are B-listed.',
+    history:'Speirs Wharf was a major grain storage complex serving the Forth & Clyde Canal. The warehouses date from the early 19th century and are among the oldest surviving industrial structures in Glasgow.',
+    thumbnail:'', validated:'2023-08', link:'',
+    contacts:[{ role:'Developer', name:'City Property Glasgow', email:'info@citypropertyglasgow.co.uk' },{ role:'Demolition Contractor', name:'McGill Demolition Scotland', phone:'+44 141 000 0000' }],
+    source:'Recast'
+  },
+  {
+    id:'s7', title:'Caledonian Road Depot', address:'Caledonian Rd, London N7 9RQ',
+    lpa:'London Borough of Islington', status:'planned', lat:51.5517, lng:-0.1197,
+    use:'Transport / Municipal', yearBuilt:'1963', reason:'TfL surplus disposal. Site earmarked for affordable housing.',
+    description:'Demolition of former London Borough Council road maintenance depot.',
+    history:'Used as a highways maintenance yard from 1963. Vacated in 2019 following consolidation of Islington Council\'s operational estate.',
+    thumbnail:'', validated:'2024-03', link:'',
+    contacts:[{ role:'Client', name:'Islington Council', email:'planning@islington.gov.uk' }],
+    source:'Recast'
+  },
+  {
+    id:'s8', title:'Former Redcar Steelworks Admin Block', address:'Kirkleatham St, Redcar TS10 1SP',
+    lpa:'Redcar & Cleveland Borough Council', status:'ongoing', lat:54.6170, lng:-1.0680,
+    use:'Industrial / Administrative', yearBuilt:'1958', reason:'Site remediation following permanent closure of the SSI steelworks in 2015.',
+    description:'Administrative offices of former SSI steel plant, being demolished as part of a major site remediation and Freeport development programme.',
+    history:'The Redcar steelworks was one of the largest integrated steel plants in Europe, employing over 3,000 people at its peak. The site closed permanently in September 2015.',
+    thumbnail:'', validated:'2023-10', link:'',
+    contacts:[{ role:'Client', name:'South Tees Development Corporation', email:'info@southtees.co.uk' }],
+    source:'Recast'
+  },
+  {
+    id:'s9', title:'Elephant & Castle Shopping Centre', address:'New Kent Rd, London SE1 6TE',
+    lpa:'London Borough of Southwark', status:'ongoing', lat:51.4943, lng:-0.1003,
+    use:'Retail / Leisure', yearBuilt:'1965', reason:'Full redevelopment by Elephant & Castle Ltd (subsidiary of Delancey). Planning permission granted 2018.',
+    description:'Full demolition of the 1965 shopping centre, the first covered shopping mall in Europe.',
+    history:'Opened in 1965 as a pioneering covered shopping mall. The pink elephant motif became a local landmark. Significant community opposition to demolition. Independent traders relocated to nearby venues.',
+    thumbnail:'', validated:'2023-05', link:'https://planning.southwark.gov.uk/',
+    contacts:[{ role:'Developer', name:'Elephant & Castle Ltd (Delancey)', email:'info@delancey.com' },{ role:'Demolition Contractor', name:'Keltbray Group', email:'info@keltbray.com' }],
+    source:'Recast'
+  },
+  {
+    id:'s10', title:'Bradford City Centre Block D', address:'Westgate, Bradford BD1 2QY',
+    lpa:'Bradford Metropolitan District Council', status:'planned', lat:53.7949, lng:-1.7557,
+    use:'Mixed Use / Commercial', yearBuilt:'1968', reason:'Bradford City Village masterplan. Unlocking key development land.',
+    description:'Demolition of post-war commercial block as part of the Bradford City Village scheme.',
+    history:'Part of the Westgate/Sunbridge Road commercial estate developed in the late 1960s. Long-term vacancy since 2010.',
+    thumbnail:'', validated:'2024-01', link:'',
+    contacts:[{ role:'Client', name:'Bradford Council Regeneration', email:'cityvillage@bradford.gov.uk' }],
+    source:'Recast'
+  },
+  {
+    id:'s11', title:'Former Boots Factory Block C', address:'Station Road, Beeston, Nottingham NG9 2WN',
+    lpa:'Broxtowe Borough Council', status:'planned', lat:52.9284, lng:-1.2162,
+    use:'Industrial / Pharmaceutical', yearBuilt:'1961', reason:'Rationalisation of Boots UK manufacturing estate. Block C not structurally viable for reuse.',
+    description:'Demolition of 1961 production annex. Grade II listed D10 building excluded from demolition scope.',
+    history:'The Boots Island Site was purpose-built for pharmaceutical manufacturing. Block C was added in 1961 to expand production capacity. Boots UK retains ownership of the wider campus.',
+    thumbnail:'', validated:'2023-12', link:'',
+    contacts:[{ role:'Site Owner', name:'Boots UK Limited', phone:'+44 115 959 5165' }],
+    source:'Recast'
+  },
+  {
+    id:'s12', title:'Regent Cinema', address:'High Street, Cheltenham GL50 1DY',
+    lpa:'Cheltenham Borough Council', status:'submitted', lat:51.9000, lng:-2.0735,
+    use:'Leisure / Cinema', yearBuilt:'1939', reason:'Long-term vacancy. Owner citing unviable restoration costs.',
+    description:'Art Deco cinema building. Submitted to Recast by local preservation group monitoring the site.',
+    history:'Opened in 1939 as the Gaumont, later became the Odeon and then the Regent. Closed in 2007. The facade features original Art Deco detailing. Currently subject to a community asset transfer application.',
+    thumbnail:'', validated:'2024-04', link:'',
+    contacts:[{ role:'Submitted By', name:'Cheltenham Civic Society', email:'info@cheltenhamcivicsociety.co.uk' }],
+    source:'Recast'
+  },
+  {
+    id:'s13', title:'Ayr Station Hotel', address:'Burns Statue Square, Ayr KA7 1SW',
+    lpa:'South Ayrshire Council', status:'submitted', lat:55.4628, lng:-4.6294,
+    use:'Hospitality / Hotel', yearBuilt:'1886', reason:'Long-term dereliction. Structural surveys indicate unsafe condition.',
+    description:'Category B listed Victorian railway hotel, derelict since 2017. Materials submitted to Recast by proposed demolition contractor.',
+    history:'Built in 1886 to serve the Glasgow and South Western Railway terminus. The hotel operated until 2017 and is a prominent landmark in the town centre. Listed status may complicate demolition consent.',
+    thumbnail:'', validated:'2024-02', link:'',
+    contacts:[{ role:'Demolition Contractor', name:'McLaughlin Demolition Ltd', email:'enquiries@mclaughlindemolition.co.uk' },{ role:'Site Owner', name:'South Ayrshire Council', phone:'+44 1292 612 000' }],
+    source:'Recast'
+  },
+  {
+    id:'s14', title:'Haydock Industrial Estate — Unit 7', address:'Haydock, St Helens WA11 9TH',
+    lpa:'St Helens Borough Council', status:'ongoing', lat:53.4714, lng:-2.6681,
+    use:'Industrial / Warehouse', yearBuilt:'1974', reason:'Replacement by modern logistics unit. Steel portal frame and concrete slab available for salvage.',
+    description:'Demolition of single-storey 1970s warehouse unit within active industrial estate.',
+    history:'Part of Haydock Industrial Estate, developed during the 1970s expansion of manufacturing in the North West. Unit 7 has been vacant since 2020.',
+    thumbnail:'', validated:'2023-11', link:'',
+    contacts:[{ role:'Site Owner', name:'Peel Logistics Property Ltd', email:'logistics@peel.co.uk' },{ role:'Demolition Contractor', name:'Atlas Demolition NW', phone:'+44 1942 000 000' }],
+    source:'Recast'
+  },
+  {
+    id:'s15', title:'Former Coventry Telephone Exchange', address:'Corporation St, Coventry CV1 1GF',
+    lpa:'Coventry City Council', status:'planned', lat:52.4068, lng:-1.5075,
+    use:'Telecommunications / Infrastructure', yearBuilt:'1955', reason:'BT decommissioning programme. Building surplus to operational requirements.',
+    description:'Mid-century BT exchange building, decommissioned 2022. Raised floor systems and cable management infrastructure available.',
+    history:'Built in 1955 as part of the post-war reconstruction of Coventry city centre, the exchange served the local telephone network for nearly 70 years.',
+    thumbnail:'', validated:'2024-03', link:'',
+    contacts:[{ role:'Client', name:'BT Group Property', email:'property@bt.com' }],
+    source:'Recast'
+  },
+];
+
+// ── Auto-init when map tab is opened ──────────
+const _origShowPage = window.showPage;
+// We'll hook into the routing instead
+document.addEventListener('recast:showpage', e => {
+  if (e.detail === 'map') {
+    setTimeout(initMap, 80);
+  }
+});
+
+</script>
+</body>
+</html>
