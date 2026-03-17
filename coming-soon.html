@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recast — Coming Soon</title>
+<meta name="description" content="Recast is the UK's first live intelligence platform for demolition activity and reclaimed construction materials. Launching 2026.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:    #111110;
+    --cream:  #F2F0EA;
+    --warm:   #55554E;
+    --rule:   #D8D6CE;
+    --mid:    #E8E6DE;
+    --green:  #2B6E45;
+    --green-l:#D4EAD8;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Barlow', sans-serif;
+    font-weight: 400;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE TEXTURE overlay ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── LAYOUT ── */
+  .page {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 2rem 2.5rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards;
+    animation-delay: 0.1s;
+  }
+
+  .wordmark {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: clamp(1.4rem, 3vw, 1.8rem);
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--warm);
+    border: 1px solid var(--rule);
+    padding: 0.4rem 0.9rem;
+    border-radius: 2rem;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* ── MAIN ── */
+  main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4rem 2.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .eyebrow {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--warm);
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards;
+    animation-delay: 0.25s;
+  }
+
+  .headline {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: clamp(5rem, 16vw, 14rem);
+    line-height: 0.88;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-bottom: 0.15em;
+    opacity: 0;
+    animation: fadeUp 0.7s ease forwards;
+    animation-delay: 0.35s;
+  }
+
+  .headline .dot {
+    color: var(--green);
+  }
+
+  .rule-line {
+    width: 100%;
+    height: 2px;
+    background: var(--ink);
+    margin: 2rem 0;
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: scaleIn 0.7s ease forwards;
+    animation-delay: 0.55s;
+  }
+
+  @keyframes scaleIn {
+    to { opacity: 1; transform: scaleX(1); }
+  }
+
+  .description-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    margin-bottom: 3.5rem;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards;
+    animation-delay: 0.7s;
+  }
+
+  .description p {
+    font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--warm);
+    max-width: 42ch;
+  }
+
+  .description p + p {
+    margin-top: 1rem;
+  }
+
+  .stats {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 1rem;
+  }
+
+  .stat-row {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .stat-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .stat-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--ink);
+    min-width: 5rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--warm);
+    line-height: 1.4;
+  }
+
+  /* ── EMAIL FORM ── */
+  .signup-block {
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards;
+    animation-delay: 0.85s;
+  }
+
+  .signup-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--warm);
+    margin-bottom: 0.8rem;
+  }
+
+  .signup-form {
+    display: flex;
+    gap: 0;
+    max-width: 520px;
+    border: 2px solid var(--ink);
+  }
+
+  .signup-form input {
+    flex: 1;
+    padding: 0.9rem 1.2rem;
+    font-family: 'Barlow', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    outline: none;
+  }
+
+  .signup-form input::placeholder {
+    color: var(--rule);
+  }
+
+  .signup-form button {
+    padding: 0.9rem 1.6rem;
+    background: var(--ink);
+    color: var(--cream);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .signup-form button:hover {
+    background: var(--green);
+  }
+
+  .signup-note {
+    margin-top: 0.7rem;
+    font-size: 0.72rem;
+    color: var(--warm);
+    opacity: 0.7;
+  }
+
+  .success-message {
+    display: none;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.9rem 1.2rem;
+    background: var(--green-l);
+    border: 2px solid var(--green);
+    max-width: 520px;
+    font-size: 0.9rem;
+    color: var(--green);
+    font-weight: 500;
+  }
+
+  .success-message.visible {
+    display: flex;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 1.5rem 2.5rem;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    opacity: 0;
+    animation: fadeUp 0.5s ease forwards;
+    animation-delay: 1s;
+  }
+
+  .footer-left {
+    font-size: 0.72rem;
+    color: var(--warm);
+    letter-spacing: 0.04em;
+  }
+
+  .footer-right {
+    display: flex;
+    gap: 2rem;
+  }
+
+  .footer-right a {
+    font-size: 0.72rem;
+    color: var(--warm);
+    text-decoration: none;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: color 0.2s ease;
+  }
+
+  .footer-right a:hover {
+    color: var(--ink);
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    header { padding: 1.4rem 1.5rem; }
+    main { padding: 3rem 1.5rem; }
+    footer { padding: 1.2rem 1.5rem; flex-direction: column; gap: 1rem; align-items: flex-start; }
+
+    .description-row {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+
+    .stats {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0;
+    }
+
+    .stat-row {
+      flex: 1;
+      min-width: 140px;
+      flex-direction: column;
+      gap: 0.2rem;
+      border-bottom: none;
+      border-right: 1px solid var(--rule);
+      padding-bottom: 0;
+      padding-right: 1rem;
+    }
+
+    .stat-row:last-child { border-right: none; }
+
+    .signup-form { flex-direction: column; }
+    .signup-form button { width: 100%; }
+
+    .footer-right { gap: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <span class="wordmark">Recast.</span>
+    <div class="status-pill">
+      <span class="status-dot"></span>
+      In Development
+    </div>
+  </header>
+
+  <main>
+    <p class="eyebrow">United Kingdom &nbsp;·&nbsp; Circular Economy Platform &nbsp;·&nbsp; Launching 2026</p>
+
+    <h1 class="headline">The UK's<br>demolition<br>atlas<span class="dot">.</span></h1>
+
+    <div class="rule-line"></div>
+
+    <div class="description-row">
+      <div class="description">
+        <p>Recast is the United Kingdom's first live intelligence platform for demolition activity and reclaimed construction materials — mapping what is coming down so that what is worth saving can be found before it is lost.</p>
+        <p>Every week, buildings are stripped and their materials are landfilled. Not because nobody wanted them — but because nobody knew in time. Recast closes that gap.</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat-row">
+          <span class="stat-value">62%</span>
+          <span class="stat-label">of all UK waste<br>comes from construction &amp; demolition</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-value">100M+</span>
+          <span class="stat-label">tonnes of demolition<br>material lost annually</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-value">35%</span>
+          <span class="stat-label">embodied carbon reduction<br>achievable through reclaimed materials</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="signup-block">
+      <p class="signup-label">Be the first to know when we launch</p>
+
+      <form class="signup-form" id="signupForm" onsubmit="handleSubmit(event)">
+        <input
+          type="email"
+          id="emailInput"
+          placeholder="your@email.com"
+          required
+          autocomplete="email"
+        />
+        <button type="submit">Notify me</button>
+      </form>
+
+      <div class="success-message" id="successMsg">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="7.5" stroke="#2B6E45"/>
+          <path d="M4.5 8l2.5 2.5 4.5-5" stroke="#2B6E45" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        You're on the list — we'll be in touch before we launch.
+      </div>
+
+      <p class="signup-note">No spam. One email when we launch. Unsubscribe any time.</p>
+    </div>
+  </main>
+
+  <footer>
+    <span class="footer-left">© 2026 Recast &nbsp;·&nbsp; recastplatform.co.uk</span>
+    <div class="footer-right">
+      <a href="mailto:info@recastplatform.co.uk">info@recastplatform.co.uk</a>
+      <a href="mailto:partnerships@recastplatform.co.uk">Partnerships</a>
+      <a href="mailto:press@recastplatform.co.uk">Press</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+function handleSubmit(e) {
+  e.preventDefault();
+  const email = document.getElementById('emailInput').value;
+  const form = document.getElementById('signupForm');
+  const success = document.getElementById('successMsg');
+
+  // Hide form, show success
+  form.style.display = 'none';
+  success.classList.add('visible');
+
+  // In production: replace this with a real API call to your email provider
+  // e.g. Mailchimp, ConvertKit, or your own backend endpoint
+  console.log('Email captured:', email);
+}
+</script>
+
+</body>
+</html>
