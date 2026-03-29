@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — Recast</title>
+<meta name="description" content="Recast Privacy Policy — how we collect, use, and protect your personal data.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink:   #111110;
+    --warm:  #333333;
+    --label: #555555;
+    --rule:  #D8D6CE;
+    --mid:   #E8E6DE;
+    --cream: #F2F0EA;
+    --green: #2B6E45;
+    --gbg:   #D4EAD8;
+    --blue:  #1A4F8A;
+    --bbg:   #D4E4F5;
+    --amber: #7A5C00;
+    --abg:   #FFF3CD;
+    --red:   #8B1A1A;
+    --rbg:   #FDECEA;
+  }
+  html, body { background: var(--cream); color: var(--warm); font-family: 'Barlow', sans-serif; font-weight: 400; font-size: 16px; line-height: 1.7; }
+
+  /* ── HEADER ── */
+  header { border-bottom: 2px solid var(--ink); padding: 1.2rem 2.5rem; display: flex; justify-content: space-between; align-items: center; }
+  .wordmark { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 1.5rem; text-transform: uppercase; color: var(--ink); text-decoration: none; letter-spacing: -0.01em; }
+  .back-link { font-size: 0.75rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--label); text-decoration: none; border: 1px solid var(--rule); padding: 0.4rem 0.9rem; border-radius: 2rem; transition: color 0.2s, border-color 0.2s; }
+  .back-link:hover { color: var(--ink); border-color: var(--ink); }
+
+  /* ── LAYOUT ── */
+  main { max-width: 860px; margin: 0 auto; padding: 4rem 2.5rem 6rem; }
+
+  /* ── DOC HEADER ── */
+  .doc-header { margin-bottom: 3rem; }
+  .doc-header h1 { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: clamp(2.8rem, 7vw, 4.5rem); line-height: 0.9; text-transform: uppercase; color: var(--ink); border-bottom: 3px solid var(--ink); padding-bottom: 0.3em; margin-bottom: 0.6rem; }
+  .doc-header .subtitle { font-size: 0.9rem; color: var(--label); font-style: italic; }
+
+  /* ── META TABLE ── */
+  .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 2.5rem; font-size: 0.85rem; }
+  .meta-table td { padding: 0.5rem 0.8rem; border: 1px solid var(--rule); }
+  .meta-table td:first-child { background: var(--mid); font-weight: 600; color: var(--label); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; width: 35%; }
+  .meta-table td:last-child { background: white; color: var(--ink); }
+
+  /* ── SECTIONS ── */
+  .section { margin-bottom: 3rem; }
+  .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 0.4rem; margin-bottom: 1.2rem; display: flex; align-items: baseline; gap: 0.6rem; }
+  .section-head .num { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 1.1rem; color: var(--rule); }
+  .section-head h2 { font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink); }
+  h3 { font-size: 0.95rem; font-weight: 600; color: var(--ink); margin: 1.4rem 0 0.4rem; }
+  p { margin-bottom: 0.9rem; font-weight: 300; font-size: 0.95rem; color: var(--warm); }
+
+  /* ── TABLES ── */
+  .data-table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.82rem; }
+  .data-table th { background: var(--ink); color: white; padding: 0.6rem 0.8rem; text-align: left; font-weight: 600; font-size: 0.78rem; letter-spacing: 0.04em; }
+  .data-table td { padding: 0.55rem 0.8rem; border: 1px solid var(--rule); vertical-align: top; line-height: 1.5; }
+  .data-table tr:nth-child(even) td { background: var(--cream); }
+  .data-table tr:nth-child(odd) td { background: white; }
+  .data-table td:first-child { font-weight: 600; color: var(--ink); }
+
+  /* ── STATUS TAGS ── */
+  .tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 0.2rem; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .tag-green { background: var(--gbg); color: var(--green); }
+  .tag-blue  { background: var(--bbg); color: var(--blue); }
+  .tag-amber { background: var(--abg); color: var(--amber); }
+  .tag-red   { background: var(--rbg); color: var(--red); }
+
+  /* ── BULLETS ── */
+  ul { margin: 0.5rem 0 1rem 0; padding-left: 0; list-style: none; }
+  ul li { padding: 0.2rem 0 0.2rem 1.4rem; position: relative; font-size: 0.95rem; font-weight: 300; color: var(--warm); }
+  ul li::before { content: "\2014"; position: absolute; left: 0; color: var(--rule); }
+
+  /* ── NOTE BOX ── */
+  .note { border-left: 4px solid var(--amber); background: var(--abg); padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.88rem; font-style: italic; color: var(--amber); }
+
+  /* ── FOOTER ── */
+  footer { border-top: 1px solid var(--rule); padding: 1.5rem 2.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--label); }
+  footer a { color: var(--label); text-decoration: none; }
+  footer a:hover { color: var(--ink); }
+
+  @media (max-width: 700px) {
+    header, footer { padding: 1.2rem 1.5rem; flex-direction: column; gap: 0.8rem; align-items: flex-start; }
+    main { padding: 2.5rem 1.5rem 4rem; }
+    .data-table { font-size: 0.76rem; }
+    .meta-table td:first-child { width: 40%; }
+  }
+  a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--rule); transition: text-decoration-color 0.2s; }
+  a:hover { text-decoration-color: var(--ink); }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="wordmark" href="/">Recast.</a>
+  <a class="back-link" href="/">← Back to site</a>
+</header>
+
+<main>
+  <div class="doc-header">
+    <h1>Privacy Policy</h1>
+    <p class="subtitle">How Recast collects, uses, and protects your personal data — effective 26 March 2026</p>
+  </div>
+
+  <table class="meta-table">
+    <tr><td>Data Controller</td><td>Recast · Sven Gillet</td></tr>
+    <tr><td>ICO Registration</td><td><strong>ZC111581</strong></td></tr>
+    <tr><td>Contact</td><td><a href="/cdn-cgi/l/email-protection#8fe6e1e9e0cffdeaeceefcfbffe3eefbe9e0fde2a1ece0a1fae4"><span class="__cf_email__" data-cfemail="1f767179705f6d7a7c7e6c6b6f737e6b79706d72317c70316a74">[email&#160;protected]</span></a></td></tr>
+    <tr><td>Effective date</td><td>26 March 2026</td></tr>
+    <tr><td>Version</td><td>1.1</td></tr>
+  </table>
+
+  <p>This Privacy Policy explains how Recast ("we", "us", "our") collects, uses, stores, and protects personal data when you use our platform at recastplatform.co.uk. We are committed to protecting your privacy and handling your data transparently and in accordance with the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.</p>
+  <p>Please read this policy carefully. By using the Recast platform you acknowledge that you have read and understood this policy.</p>
+
+  <div class="section">
+    <div class="section-head"><span class="num">01</span><h2>Who We Are</h2></div>
+    <p>Recast is a live intelligence platform for demolition activity and reclaimed construction materials across the United Kingdom. The platform is operated by Sven Gillet, trading as Recast, registered with the Information Commissioner's Office (ICO) under registration number <strong>ZC111581</strong>. Contact: <a href="/cdn-cgi/l/email-protection#c7aea9a1a887b5a2a4a6b4b3b7aba6b3a1a8b5aae9a4a8e9b2ac"><span class="__cf_email__" data-cfemail="5e373038311e2c3b3d3f2d2a2e323f2a38312c33703d31702b35">[email&#160;protected]</span></a></p>
+    <p>For all data protection enquiries, please contact us at: <a href="/cdn-cgi/l/email-protection#cfa6a1a9a08fbdaaacaebcbbbfa3aebba9a0bda2e1aca0e1baa4"><span class="__cf_email__" data-cfemail="61080f070e21130402001215110d0015070e130c4f020e4f140a">[email&#160;protected]</span></a></p>
+    <div class="note">The data controller details will be updated when Recast Platform Ltd is incorporated. A revised version of this policy will be published at that time.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><span class="num">02</span><h2>What Personal Data We Collect</h2></div>
+    <h3>2.1 — Data You Provide Directly</h3>
+    <p>When you register for an account, we collect: your email address, full name, organisation, and profession. When you submit a project through the submission portal, we collect the information you enter across all five tabs of the submission form, including contact details for the project. When you contact us by email, we retain the contents of your correspondence.</p>
+    <h3>2.2 — Data We Collect Automatically</h3>
+    <p>When you use the platform, we may collect: your IP address, browser type and version, the pages you visit, the time and date of your visit, and how you interact with the platform. We use Plausible Analytics, a privacy-respecting analytics service that does not use cookies and does not collect personally identifiable information.</p>
+    <h3>2.3 — Data We Collect From Third Parties</h3>
+    <p>We collect publicly available planning application data from Local Planning Authority (LPA) portals, planning.data.gov.uk, and planit.org.uk. This data relates to demolition projects and does not ordinarily contain personal data about private individuals.</p>
+    <h3>2.4 — Data We Do Not Collect</h3>
+    <p>We do not collect: special category data, financial or payment data (the platform is currently free), or data about children. If you are under 16, please do not register for an account.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><span class="num">03</span><h2>How We Use Your Personal Data</h2></div>
+    <table class="data-table">
+      <thead><tr><th>Purpose</th><th>Data Used</th><th>Legal Basis (UK GDPR)</th></tr></thead>
+      <tbody>
+        <tr><td>Provide and operate the platform</td><td>Email, name, organisation, usage data</td><td>Contract (Art. 6(1)(b))</td></tr>
+        <tr><td>Create and manage your account</td><td>Email, name, password (hashed), preferences</td><td>Contract (Art. 6(1)(b))</td></tr>
+        <tr><td>Send material watch alerts</td><td>Email, alert preferences, location</td><td>Contract (Art. 6(1)(b))</td></tr>
+        <tr><td>Send newsletter</td><td>Email, name</td><td>Consent (Art. 6(1)(a)) — withdraw at any time</td></tr>
+        <tr><td>Process project submissions</td><td>All submission form data, contact details</td><td>Contract &amp; Legitimate Interest (Art. 6(1)(b)(f))</td></tr>
+        <tr><td>Account security &amp; verification</td><td>Email, IP address, tokens</td><td>Legitimate Interest (Art. 6(1)(f))</td></tr>
+        <tr><td>Prevent fraud and abuse</td><td>IP address, usage data, failed login records</td><td>Legitimate Interest (Art. 6(1)(f))</td></tr>
+        <tr><td>Comply with legal obligations</td><td>All data as required</td><td>Legal Obligation (Art. 6(1)(c))</td></tr>
+        <tr><td>Platform analytics (anonymised)</td><td>Anonymised usage data only</td><td>Legitimate Interest (Art. 6(1)(f)) — no personal data</td></tr>
+        <tr><td>AI-assisted data processing</td><td>Project and material data — personal data pseudonymised</td><td>Legitimate Interest (Art. 6(1)(f)) — see Section 08</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><span class="num">04</span><h2>How Long We Keep Your Data</h2></div>
+    <table class="data-table">
+      <thead><tr><th>Data Category</th><th>Retention Period</th><th>End of Retention Action</th></tr></thead>
+      <tbody>
+        <tr><td>Registered user account data</td><td>Until deletion + 30 days</td><td>Personal data purged. Submitted project records anonymised.</td></tr>
+        <tr><td>Email (newsletter subscribers)</td><td>Until unsubscribe + 7 days</td><td>Deleted from email provider list.</td></tr>
+        <tr><td>Project submission data (public)</td><td>Indefinitely — permanent demolition atlas</td><td>Anonymised if submitter deletes account. Archived on project completion.</td></tr>
+        <tr><td>Private contact data (Tab 4)</td><td>3 years from submission or until project archived</td><td>Deleted from contacts_private table. Logged in audit trail.</td></tr>
+        <tr><td>IP addresses</td><td>Pseudonymised after 30 days · deleted at 12 months</td><td>Pseudonymised by scheduled job. Deleted at 12 months.</td></tr>
+        <tr><td>Correspondence (emails to Recast)</td><td>3 years</td><td>Deleted from email provider.</td></tr>
+        <tr><td>Audit log records</td><td>7 years minimum</td><td>Immutable. Cannot be deleted by any role.</td></tr>
+        <tr><td>Authentication tokens</td><td>1 hour (reset) · 48 hours (verify)</td><td>Auto-purged on expiry.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><span class="num">05</span><h2>Who We Share Your Data With</h2></div>
+    <p>We do not sell your personal data to any third party. We do not share your personal data with advertisers.</p>
+    <h3>5.1 — Service Providers</h3>
+    <table class="data-table">
+      <thead><tr><th>Provider</th><th>Service</th><th>Data Shared</th><th>Location</th></tr></thead>
+      <tbody>
+        <tr><td>Supabase</td><td>Database hosting</td><td>Account and project data</td><td>EU (Ireland) — GDPR compliant</td></tr>
+        <tr><td>Vercel</td><td>Website hosting</td><td>None (static files only)</td><td>Global CDN — no personal data</td></tr>
+        <tr><td>Cloudflare</td><td>DNS, email routing, security</td><td>IP addresses (standard web traffic)</td><td>Global — DPA in place</td></tr>
+        <tr><td>SendGrid / Postmark</td><td>Transactional email</td><td>Email address, email content</td><td>EU/UK DPA in place</td></tr>
+        <tr><td>Plausible Analytics</td><td>Website analytics</td><td>Anonymised, aggregated data only</td><td>EU (Germany) — no cookies</td></tr>
+        <tr><td>Anthropic (Claude API)</td><td>AI-assisted classification</td><td>Project and material data only — personal data excluded</td><td>EU/UK DPA in place</td></tr>
+      </tbody>
+    </table>
+    <h3>5.2 — Legal Requirements</h3>
+    <p>We may disclose personal data if required to do so by law or a court order. We will always seek to limit such disclosure to the minimum necessary.</p>
+    <h3>5.3 — Business Transfer</h3>
+    <p>If Recast is acquired or merged, your personal data may be transferred as part of that transaction. You will be notified in advance.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><span class="num">06</span><h2>Your Rights Under UK GDPR</h2></div>
+    <p>To exercise any of these rights, contact <a href="/cdn-cgi/l/email-protection#2d44434b426d5f484e4c5e595d414c594b425f40034e42035846"><span class="__cf_email__" data-cfemail="432a2d252c03312620223037332f2237252c312e6d202c6d3628">[email&#160;protected]</span></a>. We will respond within one calendar month.</p>
+    <table class="data-table">
+      <thead><tr><th>Right</th><th>What It Means for Recast Users</th></tr></thead>
+      <tbody>
+        <tr><td>Access (Art. 15)</td><td>Request a copy of all personal data we hold about you.</td></tr>
+        <tr><td>Rectification (Art. 16)</td><td>Ask us to correct inaccurate data. Update most profile data via your dashboard.</td></tr>
+        <tr><td>Erasure (Art. 17)</td><td>Delete your account at any time without our approval. Personal data purged within 30 days. Submitted project records anonymised rather than deleted.</td></tr>
+        <tr><td>Restrict Processing (Art. 18)</td><td>Ask us to pause processing in certain circumstances.</td></tr>
+        <tr><td>Data Portability (Art. 20)</td><td>Request your account data in machine-readable format (JSON).</td></tr>
+        <tr><td>Object (Art. 21)</td><td>Object to processing based on legitimate interests.</td></tr>
+        <tr><td>Automated Decision-Making (Art. 22)</td><td>We use AI to classify project data. No automated decisions with significant legal effects are made about you personally. Request human review of any decision that affects you.</td></tr>
+        <tr><td>Withdraw Consent</td><td>Withdraw newsletter consent at any time by clicking unsubscribe in any email.</td></tr>
+      </tbody>
+    </table>
+    <p>If you are not satisfied with our response, you have the right to lodge a complaint with the ICO at <a href="https://ico.org.uk" target="_blank">ico.org.uk</a> or by calling 0303 123 1113. ICO registration number: <strong>ZC111581</strong>.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><span class="num">07</span><h2>Cookies</h2></div>
+    <p>Recast uses a minimal number of cookies. For full details please see our <a href="/cookies">Cookie Policy</a>. We will always ask for your consent before setting any non-essential cookies. Essential cookies (login session, CSRF protection, consent preference) are set without requiring consent.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><span class="num">08</span><h2>AI-Assisted Data Processing</h2></div>
+    <p>Recast uses artificial intelligence to assist with the classification, enrichment, and processing of demolition project and material data. We are transparent about this use.</p>
+    <h3>What AI Is Used For</h3>
+    <ul>
+      <li>Classifying demolition project records ingested from planning portals.</li>
+      <li>Enriching project records with supplementary data from public sources.</li>
+      <li>Detecting duplicate records across multiple data sources.</li>
+      <li>Generating material watch alert notifications matched to your preferences.</li>
+      <li>Drafting the weekly newsletter (subject to human editorial review before dispatch).</li>
+    </ul>
+    <h3>What AI Is Not Used For</h3>
+    <ul>
+      <li>Making automated decisions with legal or significant effects about you personally.</li>
+      <li>Processing your private contact details, account password, or any special category data.</li>
+      <li>Assigning the Verified trust tier to any project record — this always requires human review.</li>
+    </ul>
+    <h3>Personal Data Safeguards</h3>
+    <p>All personal data is pseudonymised or excluded before being passed to any AI processing service. Contact data is never transmitted to third-party AI APIs. A machine-readable AI transparency disclosure is available at <a href="/api/v1/transparency/ai-processing">/api/v1/transparency/ai-processing</a>.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><span class="num">09</span><h2>Data Security</h2></div>
+    <ul>
+      <li>All data transmitted between your browser and our platform is encrypted using TLS 1.3.</li>
+      <li>All data stored in our database is encrypted at rest using AES-256 encryption.</li>
+      <li>Passwords are stored as one-way cryptographic hashes (bcrypt) and are never transmitted in plain text.</li>
+      <li>Private contact data is subject to additional application-layer encryption, accessible only to authorised administrators.</li>
+      <li>Access to personal data is restricted to authorised personnel with role-based access controls.</li>
+      <li>All access to sensitive data is logged in an immutable audit trail retained for a minimum of seven years.</li>
+    </ul>
+    <p>In the event of a personal data breach likely to result in a risk to your rights and freedoms, we will notify the ICO within 72 hours and notify affected individuals without undue delay.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><span class="num">10</span><h2>International Data Transfers</h2></div>
+    <p>Your personal data is primarily stored in the European Union (Ireland) on Supabase infrastructure. Where data is transferred outside the UK or EU, we ensure appropriate safeguards are in place, including Standard Contractual Clauses (SCCs), in compliance with UK GDPR Chapter V. We do not transfer private contact data or account passwords outside the Recast infrastructure boundary.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><span class="num">11</span><h2>Changes to This Policy</h2></div>
+    <p>We may update this Privacy Policy from time to time. When we make material changes, we will notify registered users by email and update the effective date above. The current version is always available at <a href="/privacy">recastplatform.co.uk/privacy</a>.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><span class="num">12</span><h2>Contact Us</h2></div>
+    <table class="meta-table">
+      <tr><td>Email</td><td><a href="/cdn-cgi/l/email-protection#4e272028210e3c2b2d2f
