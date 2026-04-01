@@ -19,6 +19,8 @@
     --mid:    #E8E6DE;
     --green:  #2B6E45;
     --green-l:#D4EAD8;
+    --red:    #8B1A1A;
+    --red-l:  #FDECEA;
   }
 
   html, body {
@@ -269,8 +271,13 @@
     white-space: nowrap;
   }
 
-  .signup-form button:hover {
+  .signup-form button:hover:not(:disabled) {
     background: var(--green);
+  }
+
+  .signup-form button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 
   .signup-note {
@@ -280,21 +287,30 @@
     opacity: 0.7;
   }
 
-  .success-message {
+  /* ── Status messages ── */
+  .status-message {
     display: none;
     align-items: center;
     gap: 0.6rem;
     padding: 0.9rem 1.2rem;
-    background: var(--green-l);
-    border: 2px solid var(--green);
     max-width: 520px;
     font-size: 0.9rem;
-    color: var(--green);
     font-weight: 500;
+    border: 2px solid;
   }
 
-  .success-message.visible {
-    display: flex;
+  .status-message.visible { display: flex; }
+
+  .status-message.success {
+    background: var(--green-l);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .status-message.error {
+    background: var(--red-l);
+    border-color: var(--red);
+    color: var(--red);
   }
 
   /* ── FOOTER ── */
@@ -427,15 +443,25 @@
           required
           autocomplete="email"
         />
-        <button type="submit">Notify me</button>
+        <button type="submit" id="submitBtn">Notify me</button>
       </form>
 
-      <div class="success-message" id="successMsg">
+      <!-- Success message -->
+      <div class="status-message success" id="successMsg">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <circle cx="8" cy="8" r="7.5" stroke="#2B6E45"/>
           <path d="M4.5 8l2.5 2.5 4.5-5" stroke="#2B6E45" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         You're on the list — we'll be in touch before we launch.
+      </div>
+
+      <!-- Error message -->
+      <div class="status-message error" id="errorMsg">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="7.5" stroke="#8B1A1A"/>
+          <path d="M8 4v4M8 10v1" stroke="#8B1A1A" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span id="errorText">Something went wrong. Please try again.</span>
       </div>
 
       <p class="signup-note">No spam. One email when we launch. Unsubscribe any time.</p>
@@ -445,9 +471,9 @@
   <footer>
     <span class="footer-left">© 2026 Recast &nbsp;·&nbsp; recastplatform.co.uk</span>
     <div class="footer-right">
-      <a href="/cdn-cgi/l/email-protection#e0898e868fa0928583819394908c8194868f928dce838fce958b"><span class="__cf_email__" data-cfemail="cca5a2aaa38cbea9afadbfb8bca0adb8aaa3bea1e2afa3e2b9a7">[email&#160;protected]</span></a>
-      <a href="/cdn-cgi/l/email-protection#d8a8b9aaacb6bdaaabb0b1a8ab98aabdbbb9abaca8b4b9acbeb7aab5f6bbb7f6adb3">Partnerships</a>
-      <a href="/cdn-cgi/l/email-protection#13636176606053617670726067637f7267757c617e3d707c3d6678">Press</a>
+      <a href="mailto:info@recastplatform.co.uk">info@recastplatform.co.uk</a>
+      <a href="mailto:partnerships@recastplatform.co.uk">Partnerships</a>
+      <a href="mailto:press@recastplatform.co.uk">Press</a>
       <a href="/privacy.html">Privacy</a>
       <a href="/cookies.html">Cookies</a>
     </div>
@@ -455,9 +481,61 @@
 
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-function handleSubmit(e) {
+<script>
+// ─────────────────────────────────────────────────────────
+// Email signup — posts to recast-proxy /subscribe endpoint
+// Proxy forwards to Mailchimp Marketing API
+// ─────────────────────────────────────────────────────────
+
+const PROXY_URL = 'https://recast-proxy-production.up.railway.app';
+
+async function handleSubmit(e) {
   e.preventDefault();
-  const email = document.getElementById('emailInput').value;
-  const form = document.getElementById('signupForm');
-  co
+
+  const email     = document.getElementById('emailInput').value.trim();
+  const form      = document.getElementById('signupForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const successMsg = document.getElementById('successMsg');
+  const errorMsg   = document.getElementById('errorMsg');
+  const errorText  = document.getElementById('errorText');
+
+  // Reset state
+  successMsg.classList.remove('visible');
+  errorMsg.classList.remove('visible');
+
+  // Disable form during request
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Sending…';
+
+  try {
+    const response = await fetch(`${PROXY_URL}/subscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Success — hide form, show confirmation
+      form.style.display = 'none';
+      successMsg.classList.add('visible');
+    } else {
+      // Server returned an error
+      errorText.textContent = data.error || 'Something went wrong. Please try again.';
+      errorMsg.classList.add('visible');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Notify me';
+    }
+
+  } catch (err) {
+    // Network error
+    errorText.textContent = 'Could not connect. Please check your connection and try again.';
+    errorMsg.classList.add('visible');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Notify me';
+  }
+}
+</script>
+</body>
+</html>
